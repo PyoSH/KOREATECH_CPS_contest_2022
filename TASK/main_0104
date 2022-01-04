@@ -1,0 +1,156 @@
+#include "VArduino.h"
+// 0104 문제 1: 상하 모터 제어 <해결!>
+// -> 가능성 1 : 포트 설정 오류 ; 정답. 센서와 모터 핀이 바뀌어 설정되어있었다. 
+
+// 실험으로 결정할 파라미터들
+#define SNS_MAX 800 // 센서 입력값 최대한계
+#define SNS_MIN 25 // 센서 입력값 최소한계
+#define MOT_MAX 254 // 모터 출력 최대한계
+#define MOT_MIN 124 // 모터 출력 최소한계
+#define STOP_TIME 1300L // 정지 시간
+#define TURN_TIME 1300L // 회전 시간
+#define WAIT_TIME 1300L // 대기 시간
+#define THRES 500 // 검정 선 임계값 
+
+#define TERMINATE '\r'
+
+#define R_LINE_SNS_PIN A0 //오른쪽 라인 검출센서
+#define L_LINE_SNS_PIN A1 //왼쪽 라인 검출센서
+
+#define UP_MOT_PIN 7 //리프트 상승 모터
+#define DN_MOT_PIN 8 //리프트 하강 모터
+#define UP_SNS_PIN 5 //리프트 상승완료 확인 센서
+#define DN_SNS_PIN 6 //리프트 하강완료 확인 센서
+
+#define R_POW_PIN 10 //오른쪽 모터 토크 
+#define L_POW_PIN 11 //왼쪽 모터 토크 
+#define R_DIR_PIN 12 //오른쪽 모터 방향
+#define L_DIR_PIN 13 //왼쪽 모터 방향
+
+//전역변수들
+String cmd, data, buff; // 시리얼 통신용도 변수선언
+
+int STEP = 0, pSTEP = 0; // 스텝 변수, 이전 스텝(대조용)
+int us, ds, rs, ls; // us->상승완료여부 ds->하강완료여부 rs->오른쪽 검정 검출 ls-> 왼쪽 검정 검출
+int speed; // 속도
+
+bool LineOn = true, pLineOn = false, Rising; // 검정 선 위에 있는지 아닌지, 
+int cnt = 0, target =0; // cnt = 검정 선 지나간 칸 수 세기, target = 가고자 하는 칸 수
+int m_lift = 0; // 
+int rw = 0, lw = 0; // 
+int m_step(0), m_pstep(-1), a_step(0), a_pstep(-1);
+unsigned long chk_time;
+
+
+// 시리얼 입력 관련
+bool SerialRead() {
+	while (Serial.available() > 0) {
+		char ch = (char)Serial.read();
+		if (ch == TERMINATE) {
+			cmd = buff.substring(0, 1);
+			if (buff.length() >= 2)
+				data = buff.substring(1);
+			else
+				data = "0";
+			buff = "";
+			return true;
+		}
+		else {
+			buff += ch;
+		}
+	}
+	return false;
+}
+
+// 센서 입력 최신화
+void InputProcess() {
+	us = digitalRead(UP_SNS_PIN);
+	ds = digitalRead(DN_SNS_PIN);
+	rs = analogRead(R_LINE_SNS_PIN);
+	ls = analogRead(L_LINE_SNS_PIN);
+	LineOn = ((rs >= THRES) && (ls >= THRES));
+	Rising = LineOn && !pLineOn; // 현재 신호와 이전 신호 비교 ~ 검정이 안잡히다가 잡히면 상승 ~
+	if (Rising) {
+		cnt++;
+		Serial.println(cnt);
+	}
+	pLineOn = LineOn; // 최신화
+}
+
+//모터 출력 최신화
+void OutputProcess() {
+	speed = (STEP == 2) ? 100 : 0;
+	analogWrite(R_POW_PIN, speed);
+	analogWrite(L_POW_PIN, speed);
+	digitalWrite(UP_MOT_PIN, (STEP == 1));
+	digitalWrite(DN_MOT_PIN, (STEP == 4));
+}
+
+// 선 따라가기
+void LineTrack() {
+	int s = rs - ls;
+	long e = 100L * s / (SNS_MAX - SNS_MIN);
+}
+
+// 시퀀스 정의, 판단 
+void SequenceProcess() {
+	switch (STEP) {
+	case 0: // wait
+		break;
+	case 1: // lift up
+		if (us == HIGH)
+			STEP++;
+		break;
+	case 2: // forward
+		if (LineOn == HIGH)
+			STEP++;
+		break;
+	case 3: // stop
+		if (speed == 0)
+			STEP++;
+		break;
+	case 4: // lift down
+		if (ds == HIGH)
+			STEP++;
+		break;
+	case 5: // go to step 0
+		STEP = 0;
+		break;
+	}
+}
+
+// 통신 시작, 핀 할당
+void setup() {
+	Serial.begin(9600);
+	Serial.print("strt \n");
+	pinMode(UP_SNS_PIN, INPUT);
+	pinMode(DN_SNS_PIN, INPUT);
+	pinMode(UP_MOT_PIN, OUTPUT);
+	pinMode(DN_MOT_PIN, OUTPUT);
+	pinMode(R_DIR_PIN, OUTPUT);
+	pinMode(L_DIR_PIN, OUTPUT);
+}
+
+void loop() {
+	
+	{ // 시리얼 통신 관련
+	bool isRecv = SerialRead();
+	if (isRecv) {
+		if (cmd == "s") // s0~ s5 입력 시 해당 숫자의 시퀀스 실행
+			STEP = data.toInt();
+	}
+	if (STEP != pSTEP) {
+		char wBuff[128];
+		int wLeng = sprintf(wBuff, "[STEP %d] \r\n", STEP);
+		Serial.write(wBuff, wLeng);
+		pSTEP = STEP;
+	}
+	}
+
+	InputProcess(); // 센서 연결 & 데이터 최신화
+	SequenceProcess(); // 시퀀스 상태 최신화
+	OutputProcess(); // 출력 최신화
+	
+
+	
+} 
