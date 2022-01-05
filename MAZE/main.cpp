@@ -280,7 +280,7 @@ void loop() {
 	{
 		start = 1;
 
-		//½Ã¸®¾ó·Î ¼öÁ¤ÇÏ±â
+		//ì‹œë¦¬ì–¼ë¡œ ìˆ˜ì •í•˜ê¸°
 		bool isRecv = SerialRead();
 		if (isRecv) {
 			if (cmd == "t")
@@ -370,13 +370,13 @@ void loop() {
 		ls = analogRead(A1);
 		fs = analogRead(A2);
 
-		//ÁÂ¿ì Àü¸é È®ÀÎ ÇÃ·¡±×
-		bool rs_on = (rs >= 170);//150  »ç°í¹æÁö¿ë
+		//ì¢Œìš° ì „ë©´ í™•ì¸ í”Œë˜ê·¸
+		bool rs_on = (rs >= 170);//150  ì‚¬ê³ ë°©ì§€ìš©
 		bool ls_on = (ls >= 170);//150
 		bool fs_on = (fs >= 90);
 
 
-		//dv (°¨¼Ó¸ğµå ½ÇÇà)
+		//dv (ê°ì†ëª¨ë“œ ì‹¤í–‰)
 		if (dv_mode == 1 && STEP == 0)
 		{
 			//Serial.print(ct);
@@ -397,30 +397,30 @@ void loop() {
 		{
 			chkTime = ct;
 
-			if (!rs_on && !ls_on && !fs_on) //¸·Èû + ¸·Èû  + ¸·Èû 
+			if (!rs_on && !ls_on && !fs_on) //ë§‰í˜ + ë§‰í˜  + ë§‰í˜ 
 			{
 
-				STEP = 1; //À¯ÅÏ 
+				STEP = 1; //ìœ í„´ 
 			}
 
-			else if (!rs_on && !ls_on && fs_on) //¸· ¸· , ¾ÕÀº ¿­
+			else if (!rs_on && !ls_on && fs_on) //ë§‰ ë§‰ , ì•ì€ ì—´
 			{
 
-				Linear(ct, ls, av); //ÀüÁø
+				Linear(ct, ls, av); //ì „ì§„
 			}
 
-			else if (!rs_on && ls_on && (fs <= 150)) //¿À ¸· / ¿Ş ¿­ / ¾Õ ¸· 
+			else if (!rs_on && ls_on && (fs <= 150)) //ì˜¤ ë§‰ / ì™¼ ì—´ / ì• ë§‰ 
 			{
 
-				STEP = 2; //¿ŞÂÊ °¡±â
+				STEP = 2; //ì™¼ìª½ ê°€ê¸°
 			}
 
-			else if (!rs_on && ls_on && fs_on) //¿À ¸· / ¿Ş ¿­/ ¾Õ ¿­
+			else if (!rs_on && ls_on && fs_on) //ì˜¤ ë§‰ / ì™¼ ì—´/ ì• ì—´
 			{
 
 
 				Linear(ct, b - rs - a, av);
-				//STEP = 3; // ÀüÁøÇÏ±â
+				//STEP = 3; // ì „ì§„í•˜ê¸°
 			}
 			else
 			{
@@ -431,7 +431,7 @@ void loop() {
 				l_d = ls;
 				f_d = fs;
 
-				STEP = 4; //ÀüºÎ ¿À¸¥ÅÏ 
+				STEP = 4; //ì „ë¶€ ì˜¤ë¥¸í„´ 
 			}
 
 
@@ -462,167 +462,6 @@ void loop() {
 		analogWrite(10, abs(rw));
 		analogWrite(11, abs(lw));
 	}
-	/*
-	count = count + 1;
-	Serial.println(count);
-	//½Ã¸®¾ó·Î ¼öÁ¤ÇÏ±â
-	bool isRecv = SerialRead();
-	if (isRecv) {
-		if (cmd == "t")
-			target = (double)data.toInt();
-		else if (cmd == "d")
-			kp1 = (double)data.toInt() / 10.0;
-		else if (cmd == "e")
-			kp2 = (double)data.toInt() / 10.0;
-
-	}
-
-	rs = analogRead(A0);
-	ls = analogRead(A1);
-	fs = analogRead(A2);
-	if (count <= 10)
-	{
-		Serial.println(rs);
-		Serial.println(ls);
-		Serial.println(fs);
-	}
-
-	//Serial.print("read check");
-
-	double ct = (double)millis() / 1000;
-
-
-	//ÁÂ¿ì Àü¸é È®ÀÎ ÇÃ·¡±×
-	bool rs_on = (rs >= 150);
-	bool ls_on = (ls >= 150);
-	bool fs_on = (fs >= 130);
-
-
-	//Serial.print("flag check");
-	if (STEP != pSTEP)
-	{
-		char wBuff[64];
-		int wLeng = sprintf(wBuff, "STEP:%d\r\n", STEP);
-		Serial.write(wBuff, wLeng);
-		Serial.println(x);
-		Serial.println(y);
-		Serial.println(z);
-		pSTEP = STEP;
-
-		if (STEP == 0)
-		{
-			chkTime = ct;
-			while(1) {
-				rs = analogRead(A0);
-				ls = analogRead(A1);
-				fs = analogRead(A2);
-				ct = (double)millis() / 1000;
-
-
-				int ds = (rs - prs);
-				dir = ds > 0 ? 1 : ds < 0 ? -1 : dir;
-				prs = rs;
-
-				int L = Limit((rs + ls + a), 32767, b);
-				double rad = acos((double)b / L);
-				angle = rad * RAD_TO_DEG * dir;
-				d = (int)(rs * cos(rad));
-
-				double err = kp1 * (target - d);
-				double err2 = kp2 * (err - angle);
-
-				rw = Limit((int)(100 + err2), 255, 0);
-				lw = Limit((int)(100 - err2), 255, 0);
-
-				digitalWrite(12, rw < 0);
-				digitalWrite(13, lw < 0);
-				analogWrite(10, abs(rw));
-				analogWrite(11, abs(lw));
-
-				if ((ct - chkTime) >= 1)
-					break;
-
-			}
-
-		}
-
-
-
-	}
-	//Serial.print("stepchage check");
-
-	if (STEP == 0)
-	{
-		chkTime = ct;
-
-		if (!rs_on && !ls_on && !fs_on) //¸·Èû + ¸·Èû  + ¸·Èû
-		{
-			x = rs_on;
-			y = ls_on;
-			z = fs_on;
-			STEP = 1; //À¯ÅÏ
-		}
-
-		else if (!rs_on && !ls_on && fs_on) //¸· ¸· , ¾ÕÀº ¿­
-		{
-			x = rs_on;
-			y = ls_on;
-			z = fs_on;
-			Linear(ct, ls, 255); //ÀüÁø
-		}
-
-		else if (!rs_on && ls_on && !fs_on) //¿À ¸· / ¿Ş ¿­ / ¾Õ ¸·
-		{
-			x = rs_on;
-			y = ls_on;
-			z = fs_on;
-			STEP = 2; //¿ŞÂÊ °¡±â
-		}
-
-		else if (!rs_on && ls_on && fs_on) //¿À ¸· / ¿Ş ¿­/ ¾Õ ¿­
-		{
-			x = rs_on;
-			y = ls_on;
-			z = fs_on;
-			Linear(ct, b - rs - a, 255);
-			//STEP = 3; // ÀüÁøÇÏ±â
-		}
-		else
-		{
-			x = rs_on;
-			y = ls_on;
-			z = fs_on;
-			STEP = 4; //ÀüºÎ ¿À¸¥ÅÏ
-		}
-
-
-	}
-	else if (STEP == 1)
-	{
-		if (U_turn(ct))
-			STEP = 0;
-	}
-	else if (STEP == 2)
-	{
-		if (RL_Turn(ct, -1))
-			m_step = STEP = 0;
-	}
-	else if (STEP == 3)
-	{
-		STEP = 0;
-	}
-	else if (STEP == 4)
-	{
-		if (RL_Turn(ct, 1))
-			m_step = STEP = 0;
-	}
-
-
-	digitalWrite(12, rw < 0);
-	digitalWrite(13, lw < 0);
-	analogWrite(10, abs(rw));
-	analogWrite(11, abs(lw));
-	*/
 
 
 
