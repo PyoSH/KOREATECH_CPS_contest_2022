@@ -1,80 +1,80 @@
 #include "VArduino.h"
-// <0104> ¹®Á¦ 1: »óÇÏ ¸ğÅÍ Á¦¾î <ÇØ°á!>
-// -> °¡´É¼º 1 : Æ÷Æ® ¼³Á¤ ¿À·ù ; Á¤´ä. ¼¾¼­¿Í ¸ğÅÍ ÇÉÀÌ ¹Ù²î¾î ¼³Á¤µÇ¾îÀÖ¾ú´Ù. 
+// <0104> ë¬¸ì œ 1: ìƒí•˜ ëª¨í„° ì œì–´ <í•´ê²°!>
+// -> ê°€ëŠ¥ì„± 1 : í¬íŠ¸ ì„¤ì • ì˜¤ë¥˜ ; ì •ë‹µ. ì„¼ì„œì™€ ëª¨í„° í•€ì´ ë°”ë€Œì–´ ì„¤ì •ë˜ì–´ìˆì—ˆë‹¤. 
 //-------------------------------------------------------------------------------------
-// <0105> ÃÖ¼Ò ±â´ÉÀÇ ¸ğµâµé ÅëÇÕµÊ -> Á¤Áö, ÀüÁø, È¸Àü, ¸®ÇÁÆ® »ó½Â, ÇÏ°­ 
-// ¹®Á¦ )±³Â÷·Î¿¡¼­ È¸Àü ½Ã 45µµ¸¦ µ¹¾Æ¹ö¸°´Ù. 
-// -> ÃÊ±â define¿¡¼­ STOP_TIME, TURN_TIME, WAIT_TIMEÀ» Á¶Á¤ÇØ¾ß ÇÑ´Ù. 
-// => STOP_TIME = 9000ÀÌ ÀÓ°èÁ¡ÀÎÁö ±× ÀÌÀü±îÁö´Â ¹«Á¶°Ç Á¤ÇØÁø ¶óÀÎ¿¡¼­ ¸ØÃá´Ù. 
+// <0105> ìµœì†Œ ê¸°ëŠ¥ì˜ ëª¨ë“ˆë“¤ í†µí•©ë¨ -> ì •ì§€, ì „ì§„, íšŒì „, ë¦¬í”„íŠ¸ ìƒìŠ¹, í•˜ê°• 
+// ë¬¸ì œ )êµì°¨ë¡œì—ì„œ íšŒì „ ì‹œ 45ë„ë¥¼ ëŒì•„ë²„ë¦°ë‹¤. 
+// -> ì´ˆê¸° defineì—ì„œ STOP_TIME, TURN_TIME, WAIT_TIMEì„ ì¡°ì •í•´ì•¼ í•œë‹¤. 
+// => STOP_TIME = 9000ì´ ì„ê³„ì ì¸ì§€ ê·¸ ì´ì „ê¹Œì§€ëŠ” ë¬´ì¡°ê±´ ì •í•´ì§„ ë¼ì¸ì—ì„œ ë©ˆì¶˜ë‹¤. 
 // => TURN_TIME = 
 // => WAIT_TIME = 
 
-// <0109> ÅëÇÕ & ½Ã³ª¸®¿À ½ÃÄö½º
-// ¹®Á¦ 1) 0105¹®Á¦2
-// -> ±×³É µô·¹ÀÌ¸¦ ¾²´ø°¡ ÇÏ´Â°Ô?
+// <0109> í†µí•© & ì‹œë‚˜ë¦¬ì˜¤ ì‹œí€€ìŠ¤
+// ë¬¸ì œ 1) 0105ë¬¸ì œ2
+// -> ê·¸ëƒ¥ ë”œë ˆì´ë¥¼ ì“°ë˜ê°€ í•˜ëŠ”ê²Œ?
 // 
-// ¹®Á¦ 2) ½ÃÄö½º 7, 21, 28¿¡¼­ Á¤ÁöÇÏ°í ÀûÀçÇØ¾ß ÇÏ´Âµ¥ ³ëºü²Ù·Î Á÷ÁøÇÏ¸é¼­ ÀûÀçÇÏ´Â Çö»ó <<220¹ø ÁÙ>>, <ÇØ°á!>
-// -> NextMove ÇÔ¼ö·Î ÇØ°á ½Ãµµ Áß...
+// ë¬¸ì œ 2) ì‹œí€€ìŠ¤ 7, 21, 28ì—ì„œ ì •ì§€í•˜ê³  ì ì¬í•´ì•¼ í•˜ëŠ”ë° ë…¸ë¹ ê¾¸ë¡œ ì§ì§„í•˜ë©´ì„œ ì ì¬í•˜ëŠ” í˜„ìƒ <<220ë²ˆ ì¤„>>, <í•´ê²°!>
+// -> NextMove í•¨ìˆ˜ë¡œ í•´ê²° ì‹œë„ ì¤‘...
 //
-// ¹®Á¦ 3) ¶óÀÎ µû¶ó°¡´Â ±â´É Ãß°¡ÇØ¾ß ÇÔ <<111¹ø ÁÙ>>, <ÇØ°á!>
-// -> LineTrack ÇÔ¼ö·Î PÁ¦¾î ¸¸µé¾î ³õÀ½
-// -> ·çÇÁ¿¡ °¤Çô¼­ ¿òÁ÷ÀÌÁö¸¦ ¾Ê´Â´Ù.  => outputprocess()¸¦ ¾Æ·¡¿¡ ³Ö¾îÁÖ¾ú´Ù. ÇØ°á.
-// -> ¸ÁÇÒ ·çÇÁ¸¸ ¹ş¾î³ª°Ô ÇØ ÁÖ¸é µÈ´Ù. => ÇØ°á. 
+// ë¬¸ì œ 3) ë¼ì¸ ë”°ë¼ê°€ëŠ” ê¸°ëŠ¥ ì¶”ê°€í•´ì•¼ í•¨ <<111ë²ˆ ì¤„>>, <í•´ê²°!>
+// -> LineTrack í•¨ìˆ˜ë¡œ Pì œì–´ ë§Œë“¤ì–´ ë†“ìŒ
+// -> ë£¨í”„ì— ê°‡í˜€ì„œ ì›€ì§ì´ì§€ë¥¼ ì•ŠëŠ”ë‹¤.  => outputprocess()ë¥¼ ì•„ë˜ì— ë„£ì–´ì£¼ì—ˆë‹¤. í•´ê²°.
+// -> ë§í•  ë£¨í”„ë§Œ ë²—ì–´ë‚˜ê²Œ í•´ ì£¼ë©´ ëœë‹¤. => í•´ê²°. 
 
 
-// ½ÇÇèÀ¸·Î °áÁ¤ÇÒ ÆÄ¶ó¹ÌÅÍµé
-#define SNS_MAX 800 // ¼¾¼­ ÀÔ·Â°ª ÃÖ´ëÇÑ°è
-#define SNS_MIN 25 // ¼¾¼­ ÀÔ·Â°ª ÃÖ¼ÒÇÑ°è
-#define MOT_MAX 254 // ¸ğÅÍ Ãâ·Â ÃÖ´ëÇÑ°è
-#define MOT_MIN 124 // ¸ğÅÍ Ãâ·Â ÃÖ¼ÒÇÑ°è
-#define STOP_TIME 6300 // Á¤Áö ½Ã°£
-#define TURN_TIME 5300 // È¸Àü ½Ã°£
-#define WAIT_TIME 7300 // ¿òÁ÷ÀÓ°ú ¿òÁ÷ÀÓ »çÀÌ ´ë±â ½Ã°£
-#define THRES 600 // °ËÁ¤ ¼± ÀÓ°è°ª 
+// ì‹¤í—˜ìœ¼ë¡œ ê²°ì •í•  íŒŒë¼ë¯¸í„°ë“¤
+#define SNS_MAX 800 // ì„¼ì„œ ì…ë ¥ê°’ ìµœëŒ€í•œê³„
+#define SNS_MIN 25 // ì„¼ì„œ ì…ë ¥ê°’ ìµœì†Œí•œê³„
+#define MOT_MAX 254 // ëª¨í„° ì¶œë ¥ ìµœëŒ€í•œê³„
+#define MOT_MIN 124 // ëª¨í„° ì¶œë ¥ ìµœì†Œí•œê³„
+#define STOP_TIME 6300 // ì •ì§€ ì‹œê°„
+#define TURN_TIME 5300 // íšŒì „ ì‹œê°„
+#define WAIT_TIME 7300 // ì›€ì§ì„ê³¼ ì›€ì§ì„ ì‚¬ì´ ëŒ€ê¸° ì‹œê°„
+#define THRES 600 // ê²€ì • ì„  ì„ê³„ê°’ 
 
 #define TERMINATE '\r'
 
-#define R_LINE_SNS_PIN A0 //¿À¸¥ÂÊ ¶óÀÎ °ËÃâ¼¾¼­
-#define L_LINE_SNS_PIN A1 //¿ŞÂÊ ¶óÀÎ °ËÃâ¼¾¼­
+#define R_LINE_SNS_PIN A0 //ì˜¤ë¥¸ìª½ ë¼ì¸ ê²€ì¶œì„¼ì„œ
+#define L_LINE_SNS_PIN A1 //ì™¼ìª½ ë¼ì¸ ê²€ì¶œì„¼ì„œ
 
-#define UP_MOT_PIN 7 //¸®ÇÁÆ® »ó½Â ¸ğÅÍ
-#define DN_MOT_PIN 8 //¸®ÇÁÆ® ÇÏ°­ ¸ğÅÍ
-#define UP_SNS_PIN 5 //¸®ÇÁÆ® »ó½Â¿Ï·á È®ÀÎ ¼¾¼­
-#define DN_SNS_PIN 6 //¸®ÇÁÆ® ÇÏ°­¿Ï·á È®ÀÎ ¼¾¼­
+#define UP_MOT_PIN 7 //ë¦¬í”„íŠ¸ ìƒìŠ¹ ëª¨í„°
+#define DN_MOT_PIN 8 //ë¦¬í”„íŠ¸ í•˜ê°• ëª¨í„°
+#define UP_SNS_PIN 5 //ë¦¬í”„íŠ¸ ìƒìŠ¹ì™„ë£Œ í™•ì¸ ì„¼ì„œ
+#define DN_SNS_PIN 6 //ë¦¬í”„íŠ¸ í•˜ê°•ì™„ë£Œ í™•ì¸ ì„¼ì„œ
 
-#define R_POW_PIN 10 //¿À¸¥ÂÊ ¸ğÅÍ ÅäÅ© 
-#define L_POW_PIN 11 //¿ŞÂÊ ¸ğÅÍ ÅäÅ© 
-#define R_DIR_PIN 12 //¿À¸¥ÂÊ ¸ğÅÍ ¹æÇâ
-#define L_DIR_PIN 13 //¿ŞÂÊ ¸ğÅÍ ¹æÇâ
+#define R_POW_PIN 10 //ì˜¤ë¥¸ìª½ ëª¨í„° í† í¬ 
+#define L_POW_PIN 11 //ì™¼ìª½ ëª¨í„° í† í¬ 
+#define R_DIR_PIN 12 //ì˜¤ë¥¸ìª½ ëª¨í„° ë°©í–¥
+#define L_DIR_PIN 13 //ì™¼ìª½ ëª¨í„° ë°©í–¥
 #define RANGE 100
 
 
-//Àü¿ªº¯¼öµé
-String cmd, data, buff; // ½Ã¸®¾ó Åë½Å¿ëµµ º¯¼ö¼±¾ğ
+//ì „ì—­ë³€ìˆ˜ë“¤
+String cmd, data, buff; // ì‹œë¦¬ì–¼ í†µì‹ ìš©ë„ ë³€ìˆ˜ì„ ì–¸
 
-int us; // »ó½Â¿Ï·á ¿©ºÎ
-int ds; // ÇÏ°­¿Ï·á ¿©ºÎ
-int rs; // ¿À¸¥ÂÊ °ËÁ¤ °ËÃâ
-int ls; //  ¿ŞÂÊ °ËÁ¤ °ËÃâ
-int rw = 0; // ¿À¸¥¹ÙÄû Ãâ·Â
-int lw = 0; // ¿Ş¹ÙÄû Ãâ·Â
+int us; // ìƒìŠ¹ì™„ë£Œ ì—¬ë¶€
+int ds; // í•˜ê°•ì™„ë£Œ ì—¬ë¶€
+int rs; // ì˜¤ë¥¸ìª½ ê²€ì • ê²€ì¶œ
+int ls; //  ì™¼ìª½ ê²€ì • ê²€ì¶œ
+int rw = 0; // ì˜¤ë¥¸ë°”í€´ ì¶œë ¥
+int lw = 0; // ì™¼ë°”í€´ ì¶œë ¥
 int m_lift = 0; // 
-bool LineOn; // °¡·Î °ËÁ¤¼± È®ÀÎ
-bool pLineOn; // °¡·Î °ËÁ¤¼±_´ëÁ¶
-bool Rising; // count ÇÒ ¶§ °ËÁ¤ ¼± À§¿¡ °è¼Ó ÀÖ´ÂÁö
-int m_step =0; // ¼¼ºÎ µ¿ÀÛ µ¿±âÈ­¸¦ À§ÇÑ ½ÃÄö½º
-int m_pstep= -1; // ¼¼ºÎ µ¿ÀÛ_´ëÁ¶
+bool LineOn; // ê°€ë¡œ ê²€ì •ì„  í™•ì¸
+bool pLineOn; // ê°€ë¡œ ê²€ì •ì„ _ëŒ€ì¡°
+bool Rising; // count í•  ë•Œ ê²€ì • ì„  ìœ„ì— ê³„ì† ìˆëŠ”ì§€
+int m_step =0; // ì„¸ë¶€ ë™ì‘ ë™ê¸°í™”ë¥¼ ìœ„í•œ ì‹œí€€ìŠ¤
+int m_pstep= -1; // ì„¸ë¶€ ë™ì‘_ëŒ€ì¡°
 
-int contest_move = 0; // ÀüÃ¼ÀûÀÎ ¿òÁ÷ÀÓÀÇ ½ÃÄö½º 
-int pcontest_move = 0; //  ÀüÃ¼ ½ÃÄö½º_´ëÁ¶
+int contest_move = 0; // ì „ì²´ì ì¸ ì›€ì§ì„ì˜ ì‹œí€€ìŠ¤ 
+int pcontest_move = 0; //  ì „ì²´ ì‹œí€€ìŠ¤_ëŒ€ì¡°
 
 int count_line=0;
 int move_target=0;
-unsigned long chk_time; // µ¿ÀÛ Á¶Àı À§ÇÑ ½Ã°£
+unsigned long chk_time; // ë™ì‘ ì¡°ì ˆ ìœ„í•œ ì‹œê°„
 
 float P_GAIN = 0.3;
 
-// Åë½Å ½ÃÀÛ, ÇÉ ÇÒ´ç
+// í†µì‹  ì‹œì‘, í•€ í• ë‹¹
 void setup() {
 	Serial.begin(9600);
 	Serial.print("strt \n");
@@ -86,18 +86,18 @@ void setup() {
 	pinMode(L_DIR_PIN, OUTPUT);
 }
 
-// ¼¾¼­ ÀÔ·Â ÃÖ½ÅÈ­
+// ì„¼ì„œ ì…ë ¥ ìµœì‹ í™”
 void InputProcess() {
 	us = digitalRead(UP_SNS_PIN);
 	ds = digitalRead(DN_SNS_PIN);
 	rs = analogRead(R_LINE_SNS_PIN);
 	ls = analogRead(L_LINE_SNS_PIN);
-	//LineOn = ((rs >= THRES) && (ls >= THRES)); // ¿ŞÂÊ ¼¾¼­ & ¿À¸¥ÂÊ ¼¾¼­°¡ ÀÓ°è°ª ÀÌ»óÀÌ¸é Áß°£/Á¤Áö¼± 
-	//Rising = LineOn && !pLineOn; // ÇöÀç ½ÅÈ£¿Í ÀÌÀü ½ÅÈ£ ºñ±³ ~ °ËÁ¤ÀÌ ¾ÈÀâÈ÷´Ù°¡ ÀâÈ÷¸é »ó½Â ~
+	//LineOn = ((rs >= THRES) && (ls >= THRES)); // ì™¼ìª½ ì„¼ì„œ & ì˜¤ë¥¸ìª½ ì„¼ì„œê°€ ì„ê³„ê°’ ì´ìƒì´ë©´ ì¤‘ê°„/ì •ì§€ì„  
+	//Rising = LineOn && !pLineOn; // í˜„ì¬ ì‹ í˜¸ì™€ ì´ì „ ì‹ í˜¸ ë¹„êµ ~ ê²€ì •ì´ ì•ˆì¡íˆë‹¤ê°€ ì¡íˆë©´ ìƒìŠ¹ ~
 	//if (Rising)
 	//	count_line++; 
 	
-	//pLineOn = LineOn; // ÃÖ½ÅÈ­
+	//pLineOn = LineOn; // ìµœì‹ í™”
 }
 
 
@@ -109,14 +109,14 @@ int Abs(int a) {
 	return (a >= 0) ? a : (-1 * a);
 }
 
-// ¼± µû¶ó°¡±â <0109> ¹®Á¦ 3 -- PÁ¦¾î·Î ¸¸µé¾î³õ±ä Çß´Âµ¥ µÇÁú ¾Ê´Â´Ù. ---µµ¿ò!!!!!!!!!!!!!
+// ì„  ë”°ë¼ê°€ê¸° <0109> ë¬¸ì œ 3 -- Pì œì–´ë¡œ ë§Œë“¤ì–´ë†“ê¸´ í–ˆëŠ”ë° ë˜ì§ˆ ì•ŠëŠ”ë‹¤. ---ë„ì›€!!!!!!!!!!!!!
 void LineTrack(int &count_line) {
 	//int error = (rs - ls)*254 / RANGE;
 	//long e = 100 * s / (SNS_MAX - SNS_MIN);
 	rs = analogRead(R_LINE_SNS_PIN);
 	ls = analogRead(L_LINE_SNS_PIN);
-	LineOn = ((rs >= THRES) && (ls >= THRES)); // ¿ŞÂÊ ¼¾¼­ & ¿À¸¥ÂÊ ¼¾¼­°¡ ÀÓ°è°ª ÀÌ»óÀÌ¸é Áß°£/Á¤Áö¼± 
-	Rising = LineOn && !pLineOn; // ÇöÀç ½ÅÈ£¿Í ÀÌÀü ½ÅÈ£ ºñ±³ ~ °ËÁ¤ÀÌ ¾ÈÀâÈ÷´Ù°¡ ÀâÈ÷¸é »ó½Â ~
+	LineOn = ((rs >= THRES) && (ls >= THRES)); // ì™¼ìª½ ì„¼ì„œ & ì˜¤ë¥¸ìª½ ì„¼ì„œê°€ ì„ê³„ê°’ ì´ìƒì´ë©´ ì¤‘ê°„/ì •ì§€ì„  
+	Rising = LineOn && !pLineOn; // í˜„ì¬ ì‹ í˜¸ì™€ ì´ì „ ì‹ í˜¸ ë¹„êµ ~ ê²€ì •ì´ ì•ˆì¡íˆë‹¤ê°€ ì¡íˆë©´ ìƒìŠ¹ ~
 	if (Rising){
 		count_line++;
 		}
@@ -124,7 +124,7 @@ void LineTrack(int &count_line) {
 	float error = (ls - rs) * 254 / (SNS_MAX - SNS_MIN); 
 	float control_value = P_GAIN * error;
 
-	//printf("!~ "); ¿¡·¯ Ã¼Å©¿ë
+	//printf("!~ "); ì—ëŸ¬ ì²´í¬ìš©
 	
 	//rw = ((MOT_MIN - MOT_MAX) * e / 100) + MOT_MAX; templet1
 	//rw = ((MOT_MIN - MOT_MAX) * error / 100) + 170; Basic1
@@ -136,11 +136,11 @@ void LineTrack(int &count_line) {
 	lw = 200 - control_value;
 	//lw = Limit(rw, MOT_MAX, MOT_MIN);
 	
-	pLineOn = LineOn; // ÃÖ½ÅÈ­
+	pLineOn = LineOn; // ìµœì‹ í™”
 	
 }
 
-//¸ğÅÍ Ãâ·Â ÃÖ½ÅÈ­
+//ëª¨í„° ì¶œë ¥ ìµœì‹ í™”
 void OutputProcess() {
 	digitalWrite(UP_MOT_PIN, (m_lift == 1) && (!us));
 	digitalWrite(DN_MOT_PIN, (m_lift == -1) && (!ds));
@@ -153,7 +153,7 @@ void OutputProcess() {
 
 /*
 bool NextMove(int line_cnt, int count_tgt) {
-	//count_line = 0; //ÀÌ°É ¿©±â¿¡ ³õ´Â°Ô ÀûÀıÇÑÁö ºÁ¾ß ÇÔ.
+	//count_line = 0; //ì´ê±¸ ì—¬ê¸°ì— ë†“ëŠ”ê²Œ ì ì ˆí•œì§€ ë´ì•¼ í•¨.
 	static unsigned long chkT;
 	bool stop_on = ((millis() - chkT - 1000) >= STOP_TIME);
 	bool wait_on = ((millis() - chkT - 1000) >= WAIT_TIME);
@@ -189,7 +189,7 @@ bool NextMove(int line_cnt, int count_tgt) {
 } 
 
 
-// ¶â¾î°íÃÄ¾ß ÇØ.
+// ëœ¯ì–´ê³ ì³ì•¼ í•´.
 bool LineMove(int line_cnt, int count_tgt) {
 	static unsigned long chkT;
 	bool stop_on = ((millis() - chkT - 1000) >= STOP_TIME);
@@ -221,7 +221,7 @@ bool LineMove(int line_cnt, int count_tgt) {
 */
 
 bool NextMove(int&count_line, int count_tgt) {
-	//count_line = 0; //ÀÌ°É ¿©±â¿¡ ³õ´Â°Ô ÀûÀıÇÑÁö ºÁ¾ß ÇÔ.
+	//count_line = 0; //ì´ê±¸ ì—¬ê¸°ì— ë†“ëŠ”ê²Œ ì ì ˆí•œì§€ ë´ì•¼ í•¨.
 	static unsigned long chkT;
 	bool stop_on = ((millis() - chkT) >= STOP_TIME);
 	bool wait_on = ((millis() - chkT) >= WAIT_TIME);
@@ -384,7 +384,7 @@ bool Move(int move_tgt) {
 	//else return false;
 }
 
-/*/ ½ÃÄö½º Á¤ÀÇ, ÆÇ´Ü 
+/*/ ì‹œí€€ìŠ¤ ì •ì˜, íŒë‹¨ 
 void SequenceProcess() {
 	switch (STEP) {
 	case 0: // wait
@@ -411,7 +411,7 @@ void SequenceProcess() {
 	}
 }*/
 
-// ½Ã¸®¾ó ÀÔ·Â °ü·Ã
+// ì‹œë¦¬ì–¼ ì…ë ¥ ê´€ë ¨
 bool SerialRead() {
 	while (Serial.available() > 0) {
 		char ch = (char)Serial.read();
@@ -434,16 +434,16 @@ bool SerialRead() {
 
 
 void loop() {
-	// ½Ã¸®¾ó Åë½Å °ü·Ã
+	// ì‹œë¦¬ì–¼ í†µì‹  ê´€ë ¨
 	bool isRecv = SerialRead();
 	if (isRecv) {
-		if (cmd == "s") // s0~ s5 ÀÔ·Â ½Ã ÇØ´ç ¼ıÀÚÀÇ ½ÃÄö½º ½ÇÇà
+		if (cmd == "s") // s0~ s5 ì…ë ¥ ì‹œ í•´ë‹¹ ìˆ«ìì˜ ì‹œí€€ìŠ¤ ì‹¤í–‰
 			//a_step = data.toInt();
 			contest_move = data.toInt();
 	}
 
 
-	InputProcess(); // ¼¾¼­ ¿¬°á & µ¥ÀÌÅÍ ÃÖ½ÅÈ­
+	InputProcess(); // ì„¼ì„œ ì—°ê²° & ë°ì´í„° ìµœì‹ í™”
 
 	if (contest_move != pcontest_move) {
 		Serial.print("[STEP] : ");
@@ -465,10 +465,10 @@ void loop() {
 		}
 		printdata(contest_move, count_line); }
 		  break;
-	case 3: // 3Ä­ ÀüÁø
+	case 3: // 3ì¹¸ ì „ì§„
 	{Move(3); printdata(contest_move, count_line); }
 	break;
-	case 4: // ¿ìÈ¸Àü
+	case 4: // ìš°íšŒì „
 	{if (Turn(1)) {
 		m_step = 0;
 		contest_move++;
@@ -476,17 +476,17 @@ void loop() {
 	printdata(contest_move, count_line);
 	}
 	break;
-	case 5: { // 4Ä­ ÀüÁø
+	case 5: { // 4ì¹¸ ì „ì§„
 		Move(4); printdata(contest_move, count_line); }
 		  break;
-	case 6: { // ÁÂÈ¸Àü
+	case 6: { // ì¢ŒíšŒì „
 		if (Turn(-1)) {
 			m_step = 0;
 			contest_move++;
 		}
 		printdata(contest_move, count_line); }
 		  break;
-	case 7: {// 1Ä­ ÀüÁø
+	case 7: {// 1ì¹¸ ì „ì§„
 		Move(1); printdata(contest_move, count_line); count_line = 0; }
 		  break;
 	case 8: {// lift up
@@ -497,17 +497,17 @@ void loop() {
 		printdata(contest_move, count_line); }
 		  break;
 		  // -----------------------1st PICK UP, GO TO POINT "C"------------------------------
-	case 9: { // ÁÂÈ¸Àü
+	case 9: { // ì¢ŒíšŒì „
 		if (Turn(-1)) {
 			m_step = 0;
 			contest_move++;
 		}
 		printdata(contest_move, count_line); }
 		  break;
-	case 10: { // 5Ä­ ÀüÁø
+	case 10: { // 5ì¹¸ ì „ì§„
 		Move(5); printdata(contest_move, count_line); }
 		   break;
-	case 11: { // ¿ìÈ¸Àü
+	case 11: { // ìš°íšŒì „
 		if (Turn(1)) {
 			m_step = 0;
 			contest_move++;
@@ -650,6 +650,6 @@ void loop() {
 	}
 	}
 
-	OutputProcess(); // Ãâ·Â ÃÖ½ÅÈ­
+	OutputProcess(); // ì¶œë ¥ ìµœì‹ í™”
 
 }
