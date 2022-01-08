@@ -275,24 +275,21 @@ void loop() {
 	bool isRecv = SerialRead();
 	if (isRecv) {
 		if (cmd == "s") // s0~ s5 입력 시 해당 숫자의 시퀀스 실행
-			a_step = data.toInt();
+			//a_step = data.toInt();
+			contest_move = data.toInt();
 	}
 	
 	InputProcess(); // 센서 연결 & 데이터 최신화
 
-	if (a_step != a_pstep) {
+
+	/*if (a_step != a_pstep) {
 		Serial.print("[STEP] : ");
 		Serial.println(a_step);
 		a_pstep = a_step;
-		
-		//char wBuff[128];
-		//int wLeng = sprintf(wBuff, "[STEP %d] \r\n", a_step);
-		//Serial.write(wBuff, wLeng);
-		//pSTEP = STEP;
-	}
- 
+
+
 	switch (a_step) {
-	case 1: 
+	case 1:
 		if (NextMove())
 			a_step = m_step = 0;
 		break;
@@ -308,7 +305,7 @@ void loop() {
 		if (LiftUp())
 			a_step = m_step = 0;
 		break;
-	case 5: 
+	case 5:
 		if (LiftDown())
 			a_step = m_step = 0;
 		break;
@@ -318,9 +315,17 @@ void loop() {
 		break;
 
 	}
+	} */
+ 
+	if (contest_move != pcontest_move) {
+		Serial.print("[STEP] : ");
+		Serial.println(contest_move);
+		pcontest_move = contest_move;
+	}
 
 
 	switch (contest_move) {
+	// -----------------------1st MISSION START, GO TO POINT "5"------------------------------
 	case 1: 
 		if (NextMove() && count_line <= 1 && count_line > 0) {
 			//contest_move = m_step = 0;
@@ -379,7 +384,7 @@ void loop() {
 			contest_move++;
 		}
 		break;
-	// -----------------------1st PICK UP------------------------------
+	// -----------------------1st PICK UP, GO TO POINT "C"------------------------------
 	case 9: // 좌회전
 		if (Turn(-1)) {
 			m_step = 0;
@@ -422,7 +427,7 @@ void loop() {
 			contest_move++;
 		}
 		break;
-	// -----------------------1st MISSION DONE------------------------------
+	// -----------------------1st MISSION DONE, GO TO POINT "2"------------------------------
 	case 16:
 		if (Turn(-1)) {
 			m_step = 0;
@@ -454,20 +459,89 @@ void loop() {
 		}
 		break;
 	case 21:
-
-
-
-
-
-
-
-
+		if (NextMove() && count_line >= 3 && count_line < 4) {
+			m_step = 0;
+			contest_move++;
+		}
+		break;
+	case 22:
+		if (LiftUp()) {
+			m_step = 0;
+			contest_move++;
+		}
+		break;
+	// ----------------------2nd PICK UP,,  GO TO POINT "E"-----------------
+	case 23:
+		if (Turn(1)) {
+			m_step = 0;
+			contest_move++;
+		}
+		break;
+	case 24:
+		if (NextMove() && count_line >= 4 && count_line < 5) {
+			m_step = 0;
+			contest_move++;
+		}
+		break;
+	case 25:
+		if (Turn(-1)) {
+			m_step = 0;
+			contest_move++;
+		}
+		break;
+	case 26:
+		if (NextMove() && count_line >= 3 && count_line < 4) {
+			m_step = 0;
+			contest_move++;
+		}
+		break;
+	case 27:
+		if (Turn(1)) {
+			m_step = 0;
+			contest_move++;
+		}
+		break;
+	case 28:
+		if (NextMove() && count_line > 0 && count_line <= 1) {
+			m_step = 0;
+			contest_move++;
+		}
+		break;
+	case 29:
+		if (LiftDown()) {
+			m_step = 0;
+			contest_move++;
+		}
+		break;
+	// -----------------------2nd MISSION DONE, GO TO GOAL------------------------------
+	case 30:
+		if (Turn(-1)) {
+			m_step = 0;
+			contest_move++;
+		}
+		break;
+	case 31:
+		if (NextMove() && count_line >= 4 && count_line < 5) {
+			m_step = 0;
+			contest_move++;
+		}
+		break;
+	case 32:
+		if (Turn(1)) {
+			m_step = 0;
+			contest_move++;
+		}
+		break;
+	case 33:
+		if (NextMove())
+			contest_move = m_step = 0;
+		break; 
+	// -----------------------GOAL IN---------------------------------------------------
 
 	default:
 		contest_move = m_step = 0;
 		rw = lw = 0;
 		break;
-
 	}
 
 
