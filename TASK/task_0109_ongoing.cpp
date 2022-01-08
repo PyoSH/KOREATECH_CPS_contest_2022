@@ -24,9 +24,9 @@
 #define SNS_MIN 25 // 센서 입력값 최소한계
 #define MOT_MAX 254 // 모터 출력 최대한계
 #define MOT_MIN 124 // 모터 출력 최소한계
-#define STOP_TIME 1300 // 정지 시간
+#define STOP_TIME 5300 // 정지 시간
 #define TURN_TIME 5300 // 회전 시간
-#define WAIT_TIME 5300 // 움직임과 움직임 사이 대기 시간
+#define WAIT_TIME 6300 // 움직임과 움직임 사이 대기 시간
 #define THRES 600 // 검정 선 임계값 
 
 #define TERMINATE '\r'
@@ -106,7 +106,7 @@ int Abs(int a) {
 // 선 따라가기
 void LineTrack() {
 	int s = rs - ls;
-	long e = 100L * s / (SNS_MAX - SNS_MIN);
+	long e = 100 * s / (SNS_MAX - SNS_MIN);
 	rw = (MOT_MIN - MOT_MAX) * e / 100 + MOT_MAX;
 	rw = Limit(rw, MOT_MAX, MOT_MIN);
 	lw = (MOT_MAX - MOT_MIN) * e / 100 + MOT_MAX;
@@ -131,7 +131,7 @@ void OutputProcess() {
 	digitalWrite(DN_MOT_PIN, (STEP == 4)); */
 }
 
-bool NextMove() {
+bool NextMove(int line_cnt, int count_tgt) {
 	//count_line = 0; //이걸 여기에 놓는게 적절한지 봐야 함.
 	static unsigned long chkT;
 	bool stop_on = ((millis() - chkT - 1000) >= STOP_TIME);
@@ -147,7 +147,9 @@ bool NextMove() {
 		if (stop_on) m_step++;
 		return false;
 	case 2:
-		rw = lw = 0;
+		if ((count_tgt -1) <line_cnt && line_cnt == count_tgt && line_cnt < count_tgt) {
+			rw = lw = 0;
+		}		
 		if (wait_on) m_step++;
 		return false;
 	default:
@@ -223,13 +225,14 @@ bool LiftDown() {
 void printdata(int step, int count) {
 	//Serial.print("contest_move : "); Serial.print(contest_move);
 	//Serial.print("count_line : "); Serial.print(count_line);
-	printf("contest_move : "); printf("%d \n",contest_move);
-	printf("count_line : "); printf("%d \n",count_line);
+	printf("contest_move : "); printf("%d  ",contest_move);
+	printf("m_step : "); printf("%d \n",m_step);
+	printf("count_line : "); printf("%d \n", count_line);
 }
 
 
-bool Move(int move_count) {
-	if (NextMove() && count_line > (move_count - 1) && count_line <= move_count) {
+bool Move(int move_tgt) {
+	if (NextMove(count_line ,move_tgt) && count_line > (move_tgt - 1) && count_line <= move_tgt) {
 		m_step = 0; count_line = 0;
 		contest_move++;
 		return true;
@@ -288,16 +291,14 @@ bool SerialRead() {
 
 
 void loop() {
-	
-
-    // 시리얼 통신 관련
+	// 시리얼 통신 관련
 	bool isRecv = SerialRead();
 	if (isRecv) {
 		if (cmd == "s") // s0~ s5 입력 시 해당 숫자의 시퀀스 실행
 			//a_step = data.toInt();
 			contest_move = data.toInt();
 	}
-	
+
 
 	InputProcess(); // 센서 연결 & 데이터 최신화
 
@@ -306,6 +307,8 @@ void loop() {
 		Serial.print("[STEP] : ");
 		Serial.println(a_step);
 		a_pstep = a_step;
+
+
 	switch (a_step) {
 	case 1:
 		if (NextMove())
@@ -331,181 +334,130 @@ void loop() {
 		a_step = m_step = 0;
 		rw = lw = 0;
 		break;
+
 	}
 	} */
- 
+
 	if (contest_move != pcontest_move) {
 		Serial.print("[STEP] : ");
 		Serial.println(contest_move);
 		pcontest_move = contest_move;
 	}
 
-	
 	switch (contest_move) {
-	// -----------------------1st MISSION START, GO TO POINT "5"------------------------------
+		// -----------------------1st MISSION START, GO TO POINT "5"------------------------------
 	case 1: {
-		if (NextMove() && count_line <= 1 && count_line > 0) {
-			//contest_move = m_step = 0;
-			m_step = 0;
-			count_line = 0; //이걸 여기에 놓는게 적절한지 봐야 함.
-			contest_move++;
-		}
-		//else if (NextMove() && count_line >= 3 && count_line < 4) {
-		//	contest_move = m_step = 0;
-		//}
-		printdata(contest_move, count_line);
-		}
-		break;
-	/*case 1:
-		a_step = 1; 
-		if (count_line <= 1 && count_line >0 )
-			contest_move = m_step = 0;
-		break;
-		*/
-	case 2: // turn left
-	{ //bool turn_done = Turn(-1);
-	if (Turn(-1)) {
-		m_step = 0;
-		contest_move++;
-	}
-	printdata(contest_move, count_line); }
-		break;
-	case 3: // 3칸 전진
-	{if (NextMove() && count_line >= 3 && count_line < 4) {
-			m_step = 0; count_line = 0; //이걸 여기에 놓는게 적절한지 봐야 함.
-			contest_move++;
-
-		}
-	printdata(contest_move, count_line); }
-		break;
-	case 4: // 우회전
-	{if (Turn(1)) {
-			m_step = 0;
-			contest_move++;
-		}
+		Move(1);
 		printdata(contest_move, count_line);
 	}
-		break;
-	case 5:{ // 4칸 전진
-		if (NextMove() && count_line >= 4 && count_line < 5) {
-			m_step = 0; count_line = 0; //이걸 여기에 놓는게 적절한지 봐야 함.
-			contest_move++;
-		}
-		printdata(contest_move, count_line); }
-		break;
-	case 6:{ // 좌회전
+		  break;
+	case 2: {// turn left
 		if (Turn(-1)) {
 			m_step = 0;
 			contest_move++;
 		}
 		printdata(contest_move, count_line); }
-		break;
-	case 7: {// 1칸 전진
-		if (NextMove() && count_line > 0 && count_line <=1) {
-			m_step = 0; count_line = 0; //이걸 여기에 놓는게 적절한지 봐야 함.
+		  break;
+	case 3: // 3칸 전진
+	{Move(3); printdata(contest_move, count_line); }
+	break;
+	case 4: // 우회전
+	{if (Turn(1)) {
+		m_step = 0;
+		contest_move++;
+	}
+	printdata(contest_move, count_line);
+	}
+	break;
+	case 5: { // 4칸 전진
+		Move(4); printdata(contest_move, count_line); }
+		  break;
+	case 6: { // 좌회전
+		if (Turn(-1)) {
+			m_step = 0;
 			contest_move++;
 		}
 		printdata(contest_move, count_line); }
-		break;
+		  break;
+	case 7: {// 1칸 전진
+		Move(1); printdata(contest_move, count_line); }
+		  break;
 	case 8: {// lift up
 		if (LiftUp()) {
 			m_step = 0;
 			contest_move++;
 		}
 		printdata(contest_move, count_line); }
-		break;
-	// -----------------------1st PICK UP, GO TO POINT "C"------------------------------
-	case 9:{ // 좌회전
+		  break;
+		  // -----------------------1st PICK UP, GO TO POINT "C"------------------------------
+	case 9: { // 좌회전
 		if (Turn(-1)) {
 			m_step = 0;
 			contest_move++;
 		}
 		printdata(contest_move, count_line); }
-		break;
-	case 10:{ // 5칸 전진
-		if (NextMove() && count_line >= 5 && count_line < 6) {
-			m_step = 0; count_line = 0; //이걸 여기에 놓는게 적절한지 봐야 함.
-			contest_move++;
-		}
-		printdata(contest_move, count_line); }
-		break;
-	case 11:{ // 우회전
+		  break;
+	case 10: { // 5칸 전진
+		Move(5); printdata(contest_move, count_line); }
+		   break;
+	case 11: { // 우회전
 		if (Turn(1)) {
 			m_step = 0;
 			contest_move++;
 		}
 		printdata(contest_move, count_line); }
-		break;
-	case 12:{
-		if (NextMove() && count_line >= 2 && count_line < 3) {
-			m_step = 0; count_line = 0; //이걸 여기에 놓는게 적절한지 봐야 함.
-			contest_move++;
-		}
-		printdata(contest_move, count_line); }
-		break;
-	case 13:{
+		   break;
+	case 12: {
+		Move(2); printdata(contest_move, count_line); }
+		   break;
+	case 13: {
 		if (Turn(-1)) {
 			m_step = 0;
 			contest_move++;
 		}
 		printdata(contest_move, count_line); }
-		break;
+		   break;
 	case 14: {
-		if (NextMove() && count_line > 0 && count_line <= 1) {
-			m_step = 0; count_line = 0; //이걸 여기에 놓는게 적절한지 봐야 함.
-			contest_move++;
-		}
-		printdata(contest_move, count_line); }
-		break;
-	case 15:{
+		Move(1); printdata(contest_move, count_line); }
+		   break;
+	case 15: {
 		if (LiftDown()) {
 			m_step = 0;
 			contest_move++;
 		}
 		printdata(contest_move, count_line); }
-		break;
-	// -----------------------1st MISSION DONE, GO TO POINT "2"------------------------------
+		   break;
+		   // -----------------------1st MISSION DONE, GO TO POINT "2"------------------------------
 	case 16: {
 		if (Turn(-1)) {
 			m_step = 0;
 			contest_move++;
 		}
 		printdata(contest_move, count_line); }
-		break;
+		   break;
 	case 17: {
-		if (NextMove() && count_line >= 3 && count_line < 4) {
-			m_step = 0; count_line = 0; //이걸 여기에 놓는게 적절한지 봐야 함.
-			contest_move++;
-		}
-		printdata(contest_move, count_line); }
-		break;
+		Move(3); printdata(contest_move, count_line); }
+		   break;
 	case 18: {
 		if (Turn(-1)) {
 			m_step = 0;
 			contest_move++;
 		}
 		printdata(contest_move, count_line); }
-		break;
+		   break;
 	case 19: {
-		if (NextMove() && count_line > 0 && count_line <= 1) {
-			m_step = 0; count_line = 0; //이걸 여기에 놓는게 적절한지 봐야 함.
-			contest_move++;
-		}
-		printdata(contest_move, count_line); }
-		break;
+		Move(1); printdata(contest_move, count_line); }
+		   break;
 	case 20: {
 		if (Turn(1)) {
 			m_step = 0;
 			contest_move++;
 		}
 		printdata(contest_move, count_line); }
-		break;
+		   break;
 	case 21: {
-		if (NextMove() && count_line >= 3 && count_line < 4) {
-			m_step = 0; count_line = 0; //이걸 여기에 놓는게 적절한지 봐야 함.
-			contest_move++;
-		}
-		printdata(contest_move, count_line); }
+		Move(3); printdata(contest_move, count_line);
+		//rw = lw = 0; }
 		break;
 	case 22: {
 		if (LiftUp()) {
@@ -513,95 +465,81 @@ void loop() {
 			contest_move++;
 		}
 		printdata(contest_move, count_line); }
-		break;
-	// ----------------------2nd PICK UP,,  GO TO POINT "E"-----------------
+		   break;
+		   // ----------------------2nd PICK UP,,  GO TO POINT "E"-----------------
 	case 23: {
 		if (Turn(1)) {
 			m_step = 0;
 			contest_move++;
 		}
 		printdata(contest_move, count_line); }
-		break;
+		   break;
 	case 24: {
-		if (NextMove() && count_line >= 4 && count_line < 5) {
-			m_step = 0; count_line = 0; //이걸 여기에 놓는게 적절한지 봐야 함.
-			contest_move++;
-		}
-		printdata(contest_move, count_line); }
-		break;
+		Move(5); printdata(contest_move, count_line); }
+		   break;
 	case 25: {
 		if (Turn(-1)) {
 			m_step = 0;
 			contest_move++;
 		}
 		printdata(contest_move, count_line); }
-		break;
+		   break;
 	case 26: {
-		if (NextMove() && count_line >= 3 && count_line < 4) {
-			m_step = 0; count_line = 0; //이걸 여기에 놓는게 적절한지 봐야 함.
-			contest_move++;
-		}
-		printdata(contest_move, count_line); }
-		break;
+		Move(3); printdata(contest_move, count_line); }
+		   break;
 	case 27: {
 		if (Turn(1)) {
 			m_step = 0;
 			contest_move++;
 		}
 		printdata(contest_move, count_line); }
-		break;
+		   break;
 	case 28: {
-		if (NextMove() && count_line > 0 && count_line <= 1) {
-			m_step = 0; count_line = 0; //이걸 여기에 놓는게 적절한지 봐야 함.
-			contest_move++;
-		}
-		printdata(contest_move, count_line); }
-		break;
+		Move(1); printdata(contest_move, count_line); }
+		   break;
 	case 29: {
 		if (LiftDown()) {
 			m_step = 0;
 			contest_move++;
 		}
 		printdata(contest_move, count_line); }
-		break;
-	// -----------------------2nd MISSION DONE, GO TO GOAL------------------------------
+		   break;
+		   // -----------------------2nd MISSION DONE, GO TO GOAL------------------------------
 	case 30: {
 		if (Turn(-1)) {
 			m_step = 0;
 			contest_move++;
 		}
 		printdata(contest_move, count_line); }
-		break;
+		   break;
 	case 31: {
-		if (NextMove() && count_line >= 4 && count_line < 5) {
-			m_step = 0; count_line = 0; //이걸 여기에 놓는게 적절한지 봐야 함.
-			contest_move++;
-		}
+		Move(4);
 		printdata(contest_move, count_line); }
-		break;
+		   break;
 	case 32: {
 		if (Turn(1)) {
 			m_step = 0;
 			contest_move++;
 		}
 		printdata(contest_move, count_line); }
-		break;
+		   break;
 	case 33: {
-		if (NextMove())
-			contest_move = m_step = 0;
+		Move(1);
 		printdata(contest_move, count_line); }
-		break; 
-	// -----------------------GOAL IN---------------------------------------------------
+		   break;
+		   // -----------------------GOAL IN---------------------------------------------------
 
 	default: {
 		contest_move = m_step = 0;
 		rw = lw = 0;
-		printdata(contest_move, count_line);
-	}
-		break;
+		count_line = 0;
+		printdata(contest_move, count_line);	}
+		   break; }
+
+		   OutputProcess(); // 출력 최신화
+
 	}
 
+	OutputProcess();
 
-	OutputProcess(); // 출력 최신화
-		
-} 
+}
