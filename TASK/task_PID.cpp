@@ -27,9 +27,9 @@
 #define SNS_MIN 25 // 센서 입력값 최소한계
 #define MOT_MAX 254 // 모터 출력 최대한계
 #define MOT_MIN 124 // 모터 출력 최소한계
-#define STOP_TIME 6300 // 정지 시간
+#define STOP_TIME 5300 // 정지 시간
 #define TURN_TIME 5300 // 회전 시간
-#define WAIT_TIME 7300 // 움직임과 움직임 사이 대기 시간
+#define WAIT_TIME 5500 // 움직임과 움직임 사이 대기 시간
 #define THRES 600 // 검정 선 임계값 
 
 #define TERMINATE '\r'
@@ -72,7 +72,13 @@ int count_line=0;
 int move_target=0;
 unsigned long chk_time; // 동작 조절 위한 시간
 
-float P_GAIN = 0.3;
+float error = 0;
+float p_error = 0;
+float acc_error = 0;
+float P_GAIN = 0.4;
+float I_GAIN = 1;
+float D_GAIN = 0.00000;
+float dt = 0.0001;
 
 // 통신 시작, 핀 할당
 void setup() {
@@ -121,8 +127,12 @@ void LineTrack(int &count_line) {
 		count_line++;
 		}
 
-	float error = (ls - rs) * 254 / (SNS_MAX - SNS_MIN); 
-	float control_value = P_GAIN * error;
+	error = (ls - rs) * 254 / (SNS_MAX - SNS_MIN); 
+	float P_value = P_GAIN * error ;
+	float I_value = I_GAIN * acc_error*dt;
+	float D_value = D_GAIN * (error - p_error) / dt;
+
+	float control_value = P_value + D_value;
 
 	//printf("!~ "); 에러 체크용
 	
@@ -137,6 +147,8 @@ void LineTrack(int &count_line) {
 	//lw = Limit(rw, MOT_MAX, MOT_MIN);
 	
 	pLineOn = LineOn; // 최신화
+	acc_error += error;
+	p_error = error;
 	
 }
 
@@ -150,75 +162,6 @@ void OutputProcess() {
 	analogWrite(R_POW_PIN, rw);
 	analogWrite(L_POW_PIN, lw);
 }
-
-/*
-bool NextMove(int line_cnt, int count_tgt) {
-	//count_line = 0; //이걸 여기에 놓는게 적절한지 봐야 함.
-	static unsigned long chkT;
-	bool stop_on = ((millis() - chkT - 1000) >= STOP_TIME);
-	bool wait_on = ((millis() - chkT - 1000) >= WAIT_TIME);
-	switch (m_step) {
-	case 0:
-		LineTrack();
-		if (Rising) m_step++;
-		return false;
-	case 1:
-		//rw = lw = 100;
-		LineTrack();
-		if (stop_on) m_step++;
-		return false;
-	case 2:
-		if ((count_tgt -1) <line_cnt && line_cnt <= count_tgt) {
-			rw = lw = 0;
-			if (contest_move == 7 || contest_move == 19 || contest_move == 21 || contest_move == 28) {
-				rw = lw = 0;
-			}
-		}		
-		if (wait_on) {
-			
-			m_step++;
-		}
-		return false;
-	default:
-	{
-		//if (contest_move == 7 || contest_move == 19 || contest_move == 21 || contest_move == 28 && wait_on) {rw = lw = 0; }
-		return true;
-	}
-		
-	}	
-} 
-
-
-// 뜯어고쳐야 해.
-bool LineMove(int line_cnt, int count_tgt) {
-	static unsigned long chkT;
-	bool stop_on = ((millis() - chkT - 1000) >= STOP_TIME);
-	bool wait_on = ((millis() - chkT - 1000) >= WAIT_TIME);
-	
-	
-	InputProcess();
-	
-	while (count_tgt > 0 && (0 <= line_cnt <= count_tgt)) {
-		InputProcess();
-		rw = lw = 100;
-		printf("ew\n");
-		
-		if ((contest_move == 7 || contest_move == 19 || contest_move == 21 || contest_move == 28)
-			|| (line_cnt == count_tgt) || (stop_on) || (stop_on && wait_on)) {
-			rw = lw = 0;
-			printf("wow0 \n");
-			break;
-		}
-		else if (line_cnt < count_tgt) {
-			LineTrack();
-			printf("we\n");
-		}
-		return false;
-	}
-
-	return true;
-}
-*/
 
 bool NextMove(int&count_line, int count_tgt) {
 	//count_line = 0; //이걸 여기에 놓는게 적절한지 봐야 함.
@@ -260,7 +203,7 @@ bool NextMove(int&count_line, int count_tgt) {
 					rw = lw = 0;
 				}
 				rw = lw = 0;}
-			delay(300);
+			//delay(350);
 			OutputProcess();
 			if ((rw==0) || ((count_tgt - 1) < count_line && count_line <= count_tgt)) {
 				m_step++;
@@ -373,6 +316,7 @@ bool Move(int move_tgt) {
 	if (NextMove(count_line, move_tgt) && (count_line > (move_tgt - 1) || count_line <= move_tgt)) {
 		m_step = 0; count_line = 0;
 		contest_move++;
+		move_target = move_tgt = 0;
 		return true;
 	}
 
@@ -383,33 +327,6 @@ bool Move(int move_tgt) {
 
 	//else return false;
 }
-
-/*/ 시퀀스 정의, 판단 
-void SequenceProcess() {
-	switch (STEP) {
-	case 0: // wait
-		break;
-	case 1: // lift up
-		if (us == HIGH)
-			STEP++;
-		break;
-	case 2: // forward
-		if (LineOn == HIGH)
-			STEP++;
-		break;
-	case 3: // stop
-		if (speed == 0)
-			STEP++;
-		break;
-	case 4: // lift down
-		if (ds == HIGH)
-			STEP++;
-		break;
-	case 5: // go to step 0
-		STEP = 0;
-		break;
-	}
-}*/
 
 // 시리얼 입력 관련
 bool SerialRead() {
@@ -430,7 +347,6 @@ bool SerialRead() {
 	}
 	return false;
 }
-
 
 
 void loop() {
