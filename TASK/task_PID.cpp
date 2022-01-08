@@ -77,8 +77,8 @@ unsigned long chk_time; // 동작 조절 위한 시간
 float error = 0;
 float p_error = 0;
 float acc_error = 0;
-float P_GAIN = 0.305;
-float I_GAIN = 0.0007;
+float P_GAIN = 0.105; // 0.305
+float I_GAIN = 0.000; //0.0007
 float D_GAIN = 0.001;
 float dt = 0.0001;
 
@@ -440,123 +440,123 @@ void loop() {
 		}
 		printdata(contest_move, count_line); }
 		   break;
-	case 12: {
+	case 12: { //2칸 전진
 		Move(2); printdata(contest_move, count_line); }
 		   break;
-	case 13: {
+	case 13: { // 좌회전
 		if (Turn(-1)) {
 			m_step = 0;
 			contest_move++;
 		}
 		printdata(contest_move, count_line); }
 		   break;
-	case 14: {
+	case 14: { //1칸 직진
 		Move(1); printdata(contest_move, count_line); }
 		   break;
-	case 15: {
+	case 15: { // 물건 하역
 		if (LiftDown()) {
 			m_step = 0;
 			contest_move++;
 		}
 		printdata(contest_move, count_line); }
 		   break;
-		   // -----------------------1st MISSION DONE, GO TO POINT "2"------------------------------
-	case 16: {
+	// -----------------------1st MISSION DONE, GO TO POINT "2"------------------------------
+	case 16: { // 회전 to 돌아서 나가기
 		if (Turn(-1)) {
 			m_step = 0;
 			contest_move++;
 		}
 		printdata(contest_move, count_line); }
 		   break;
-	case 17: {
+	case 17: { // 3칸 전진
 		Move(3); printdata(contest_move, count_line); }
 		   break;
-	case 18: {
+	case 18: { // 좌회전
 		if (Turn(-1)) {
 			m_step = 0;
 			contest_move++;
 		}
 		printdata(contest_move, count_line); }
 		   break;
-	case 19: {
+	case 19: { // 1칸 전진
 		Move(1); printdata(contest_move, count_line); }
 		   break;
-	case 20: {
+	case 20: { // 우회전
 		if (Turn(1)) {
 			m_step = 0;
 			contest_move++;
 		}
 		printdata(contest_move, count_line); }
 		   break;
-	case 21: {
+	case 21: { // 3칸 전진
 		Move(3); printdata(contest_move, count_line); }
 		   break;
-	case 22: {
+	case 22: { // 물건 적재
 		if (LiftUp()) {
 			m_step = 0;
 			contest_move++;
 		}
 		printdata(contest_move, count_line); }
 		   break;
-		   // ----------------------2nd PICK UP,,  GO TO POINT "E"-----------------
-	case 23: {
+	// ----------------------2nd PICK UP,,  GO TO POINT "E"-----------------
+	case 23: { // 회전 to 돌아서 나가기
 		if (Turn(1)) {
 			m_step = 0;
 			contest_move++;
 		}
 		printdata(contest_move, count_line); }
 		   break;
-	case 24: {
+	case 24: { // 5칸 전진
 		Move(5); printdata(contest_move, count_line); }
 		   break;
-	case 25: {
+	case 25: { // 좌회전
 		if (Turn(-1)) {
 			m_step = 0;
 			contest_move++;
 		}
 		printdata(contest_move, count_line); }
 		   break;
-	case 26: {
+	case 26: { //3칸 전진
 		Move(3); printdata(contest_move, count_line); }
 		   break;
-	case 27: {
+	case 27: { //우회전
 		if (Turn(1)) {
 			m_step = 0;
 			contest_move++;
 		}
 		printdata(contest_move, count_line); }
 		   break;
-	case 28: {
+	case 28: { // 1칸 전진
 		Move(1); printdata(contest_move, count_line);
 	}
 		   break;
-	case 29: {
+	case 29: { // 물건 하역
 		if (LiftDown()) {
 			m_step = 0;
 			contest_move++;
 		}
 		printdata(contest_move, count_line); }
 		   break;
-		   // -----------------------2nd MISSION DONE, GO TO GOAL------------------------------
-	case 30: {
+	// -----------------------2nd MISSION DONE, GO TO GOAL------------------------------
+	case 30: { // 회전 to 돌아서 나가기
 		if (Turn(-1)) {
 			m_step = 0;
 			contest_move++;
 		}
 		printdata(contest_move, count_line); }
 		   break;
-	case 31: {
+	case 31: { // 4칸 전진
 		Move(4);
 		printdata(contest_move, count_line); }
 		   break;
-	case 32: {
+	case 32: { // 우회전
 		if (Turn(1)) {
 			m_step = 0;
 			contest_move++;
 		}
 		printdata(contest_move, count_line); }
 		   break;
-	case 33: {
+	case 33: { // 직진 to 골인
 		Move(1);
 		printdata(contest_move, count_line); }
 		   break;
