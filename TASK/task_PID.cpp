@@ -34,6 +34,8 @@
 
 #define TERMINATE '\r'
 
+#define PUSH_BTN 2 // 푸쉬버튼
+
 #define R_LINE_SNS_PIN A0 //오른쪽 라인 검출센서
 #define L_LINE_SNS_PIN A1 //왼쪽 라인 검출센서
 
@@ -75,9 +77,9 @@ unsigned long chk_time; // 동작 조절 위한 시간
 float error = 0;
 float p_error = 0;
 float acc_error = 0;
-float P_GAIN = 0.4;
-float I_GAIN = 1;
-float D_GAIN = 0.00000;
+float P_GAIN = 0.305;
+float I_GAIN = 0.0007;
+float D_GAIN = 0.001;
 float dt = 0.0001;
 
 // 통신 시작, 핀 할당
@@ -90,6 +92,8 @@ void setup() {
 	pinMode(DN_MOT_PIN, OUTPUT);
 	pinMode(R_DIR_PIN, OUTPUT);
 	pinMode(L_DIR_PIN, OUTPUT);
+
+	pinMode(PUSH_BTN, INPUT);
 }
 
 // 센서 입력 최신화
@@ -115,7 +119,7 @@ int Abs(int a) {
 	return (a >= 0) ? a : (-1 * a);
 }
 
-// 선 따라가기 <0109> 문제 3 -- P제어로 만들어놓긴 했는데 되질 않는다. ---도움!!!!!!!!!!!!!
+
 void LineTrack(int &count_line) {
 	//int error = (rs - ls)*254 / RANGE;
 	//long e = 100 * s / (SNS_MAX - SNS_MIN);
@@ -365,6 +369,12 @@ void loop() {
 		Serial.print("[STEP] : ");
 		Serial.println(contest_move);
 		pcontest_move = contest_move;
+	}
+
+	bool pb = digitalRead(PUSH_BTN);
+
+	if (pb) {
+		contest_move = 1;
 	}
 
 	switch (contest_move) {
