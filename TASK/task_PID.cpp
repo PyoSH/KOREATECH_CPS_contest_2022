@@ -64,14 +64,14 @@ int m_lift = 0; //
 bool LineOn; // 가로 검정선 확인
 bool pLineOn; // 가로 검정선_대조
 bool Rising; // count 할 때 검정 선 위에 계속 있는지
-int m_step =0; // 세부 동작 동기화를 위한 시퀀스
-int m_pstep= -1; // 세부 동작_대조
+int m_step = 0; // 세부 동작 동기화를 위한 시퀀스
+int m_pstep = -1; // 세부 동작_대조
 
 int contest_move = 0; // 전체적인 움직임의 시퀀스 
 int pcontest_move = 0; //  전체 시퀀스_대조
 
-int count_line=0;
-int move_target=0;
+int count_line = 0;
+int move_target = 0;
 unsigned long chk_time; // 동작 조절 위한 시간
 
 float error = 0;
@@ -106,7 +106,7 @@ void InputProcess() {
 	//Rising = LineOn && !pLineOn; // 현재 신호와 이전 신호 비교 ~ 검정이 안잡히다가 잡히면 상승 ~
 	//if (Rising)
 	//	count_line++; 
-	
+
 	//pLineOn = LineOn; // 최신화
 }
 
@@ -120,40 +120,40 @@ int Abs(int a) {
 }
 
 
-void LineTrack(int &count_line) {
+void LineTrack(int& count_line) {
 	//int error = (rs - ls)*254 / RANGE;
 	//long e = 100 * s / (SNS_MAX - SNS_MIN);
 	rs = analogRead(R_LINE_SNS_PIN);
 	ls = analogRead(L_LINE_SNS_PIN);
 	LineOn = ((rs >= THRES) && (ls >= THRES)); // 왼쪽 센서 & 오른쪽 센서가 임계값 이상이면 중간/정지선 
 	Rising = LineOn && !pLineOn; // 현재 신호와 이전 신호 비교 ~ 검정이 안잡히다가 잡히면 상승 ~
-	if (Rising){
+	if (Rising) {
 		count_line++;
-		}
+	}
 
-	error = (ls - rs) * 254 / (SNS_MAX - SNS_MIN); 
-	float P_value = P_GAIN * error ;
-	float I_value = I_GAIN * acc_error*dt;
+	error = (ls - rs) * 254 / (SNS_MAX - SNS_MIN);
+	float P_value = P_GAIN * error;
+	float I_value = I_GAIN * acc_error * dt;
 	float D_value = D_GAIN * (error - p_error) / dt;
 
 	float control_value = P_value + I_value + D_value;
 
 	//printf("!~ "); 에러 체크용
-	
+
 	//rw = ((MOT_MIN - MOT_MAX) * e / 100) + MOT_MAX; templet1
 	//rw = ((MOT_MIN - MOT_MAX) * error / 100) + 170; Basic1
 	//lw = ((MOT_MAX - MOT_MIN) * e / 100) + MOT_MAX; templet1
 	//lw = ((MOT_MAX - MOT_MIN) * error / 100) + 170; Basic1
-	
+
 	rw = 200 + control_value;
 	//rw = Limit(rw, MOT_MAX, MOT_MIN);
 	lw = 200 - control_value;
 	//lw = Limit(rw, MOT_MAX, MOT_MIN);
-	
+
 	pLineOn = LineOn; // 최신화
 	acc_error += error;
 	p_error = error;
-	
+
 }
 
 //모터 출력 최신화
@@ -167,41 +167,41 @@ void OutputProcess() {
 	analogWrite(L_POW_PIN, lw);
 }
 
-bool NextMove(int&count_line, int count_tgt) {
+bool NextMove(int& count_line, int count_tgt) {
 	//count_line = 0; //이걸 여기에 놓는게 적절한지 봐야 함.
 	static unsigned long chkT;
 	bool stop_on = ((millis() - chkT) >= STOP_TIME);
 	bool wait_on = ((millis() - chkT) >= WAIT_TIME);
-	
+
 	switch (m_step) {
-		case 0: {
-			while (m_step < 1) {
-				LineTrack(count_line);
-				OutputProcess();
-				if (Rising) {
-					m_step++;
-					break;
-					}
-				}	
-			return false;
-		}		
+	case 0: {
+		while (m_step < 1) {
+			LineTrack(count_line);
+			OutputProcess();
+			if (Rising) {
+				m_step++;
+				break;
+			}
+		}
+		return false;
+	}
 	case 1: {
-		while (0 < m_step&& m_step < 2) {
+		while (0 < m_step && m_step < 2) {
 			LineTrack(count_line);
 			if ((contest_move == 7 || contest_move == 19 || contest_move == 28))
 				rw = lw = 25;
 			OutputProcess();
-			
+
 			//printf(" ");
-			if (stop_on || ((count_tgt -1) <count_line && count_line <= count_tgt)) {
-				
-				if ((contest_move == 7 || contest_move == 19 || contest_move == 21 || contest_move == 28) && count_line ==count_tgt) {
+			if (stop_on || ((count_tgt - 1) < count_line && count_line <= count_tgt)) {
+
+				if ((contest_move == 7 || contest_move == 19 || contest_move == 21 || contest_move == 28) && count_line == count_tgt) {
 					rw = lw = 0;
 					printf("show");
 					m_step = 3;
-					
-				}	
-				
+
+				}
+
 				m_step++;
 				break;
 			}
@@ -211,16 +211,17 @@ bool NextMove(int&count_line, int count_tgt) {
 	}
 
 	case 2: {
-		while ( (1< m_step && m_step <= 2) ) {
+		while ((1 < m_step && m_step <= 2)) {
 			LineTrack(count_line);
 			if ((count_tgt - 1) < count_line && count_line <= count_tgt) {
 				//if (contest_move == 7 || contest_move == 19 || contest_move == 21 || contest_move == 28) {
 				//	rw = lw = 0;
 				//}
-				rw = lw = 0;}
+				rw = lw = 0;
+			}
 			//delay(350);
 			OutputProcess();
-			if ((rw==0) || ((count_tgt - 1) < count_line && count_line <= count_tgt)) {
+			if ((rw == 0) || ((count_tgt - 1) < count_line && count_line <= count_tgt)) {
 				m_step++;
 				break;
 			}
@@ -231,17 +232,17 @@ bool NextMove(int&count_line, int count_tgt) {
 	}
 
 	default:
-	{ 
-		if (m_step == 3 ) {
+	{
+		if (m_step == 3) {
 			rw = lw = 0;
 			OutputProcess();
-			
-		
+
+
 		}
-		
+
 		printf("default");
 		return true;
-		}
+	}
 
 	}
 }
@@ -281,13 +282,13 @@ bool Turn(int dir) {
 
 bool Turn_Point() {
 	static unsigned long chkT;
-	bool turn_on = ((millis() - chkT ) >= TURN_TIME);
-	bool wait_on = ((millis() - chkT ) >= WAIT_TIME);
+	bool turn_on = ((millis() - chkT) >= TURN_TIME);
+	bool wait_on = ((millis() - chkT) >= WAIT_TIME);
 	switch (m_step) {
 	case 0:
-		rw = -100 ;
-		lw = 100 ;
-		if(ls < THRES) m_step++;
+		rw = -100;
+		lw = 100;
+		if (ls < THRES) m_step++;
 		if (rs < THRES) m_step++;
 		return false;
 	case 1:
@@ -345,8 +346,8 @@ bool LiftDown() {
 void printdata(int step, int count) {
 	//Serial.print("contest_move : "); Serial.print(contest_move);
 	//Serial.print("count_line : "); Serial.print(count_line);
-	printf("contest_move : "); printf("%d  ",contest_move);
-	printf("m_step : "); printf("%d \n",m_step);
+	printf("contest_move : "); printf("%d  ", contest_move);
+	printf("m_step : "); printf("%d \n", m_step);
 	printf("count_line : "); printf("%d    ", count_line); printf("target_cnt : "); printf("%d \n", move_target);
 	printf("Right_motor : "); printf("%d   ", rw); printf("Left_motor : "); printf("%d \n\n", lw);
 
@@ -364,8 +365,9 @@ bool Move(int move_tgt) {
 
 	else if (count_line > move_tgt || count_line < 0) {
 		m_step = 0; count_line = move_tgt;
-	    return false; }
-	
+		return false;
+	}
+
 
 	//else return false;
 }
@@ -498,7 +500,7 @@ void loop() {
 		}
 		printdata(contest_move, count_line); }
 		   break;
-	// -----------------------1st MISSION DONE, GO TO POINT "2"------------------------------
+		   // -----------------------1st MISSION DONE, GO TO POINT "2"------------------------------
 	case 16: { // 회전 to 돌아서 나가기
 		if (Turn_Point()) {
 			m_step = 0;
@@ -536,7 +538,7 @@ void loop() {
 		}
 		printdata(contest_move, count_line); }
 		   break;
-	// ----------------------2nd PICK UP,,  GO TO POINT "E"-----------------
+		   // ----------------------2nd PICK UP,,  GO TO POINT "E"-----------------
 	case 23: { // 회전 to 돌아서 나가기
 		if (Turn_Point()) {
 			m_step = 0;
@@ -575,7 +577,7 @@ void loop() {
 		}
 		printdata(contest_move, count_line); }
 		   break;
-	// -----------------------2nd MISSION DONE, GO TO GOAL------------------------------
+		   // -----------------------2nd MISSION DONE, GO TO GOAL------------------------------
 	case 30: { // 회전 to 돌아서 나가기
 		if (Turn_Point()) {
 			m_step = 0;
@@ -606,7 +608,7 @@ void loop() {
 		rw = lw = 0;
 		count_line = 0;
 		move_target = 0;
-		acc_error = p_error=error = 0;
+		acc_error = p_error = error = 0;
 		printdata(contest_move, count_line);
 		OutputProcess(); // 출력 최신화
 		if (pcontest_move == 33 && contest_move == 0) {
