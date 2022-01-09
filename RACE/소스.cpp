@@ -10,9 +10,9 @@
 #define bl 6
 #define br 5
 
-float p = .24;
-float i =1805;//100;// 600;// 600000;// 4000;
-float d = 0.0000017;// 0.00000018;//0.0000001;// 0.0000015;// 0.00000000015;
+float p = .165;//.24;
+float i =1650;//100;// 600;// 600000;// 4000;
+float d = 0.0000013;// 0.00000018;//0.0000001;// 0.0000015;// 0.00000000015;
 
 //float target = 25/412;
 float error = 0.0;
@@ -58,7 +58,7 @@ float cac(float st=dt) {
 	clc = analogRead(lc); crc = analogRead(rc);
 	error = (crc - clc) * 255 / range;
 	float diff = error - last_error;
-	if(limit) acc_error += error;
+	if (limit) { acc_error += error; }
 	float control = p * error + i * acc_error * dt + d * diff / dt;
 
 	if (clc != 25 && crc != 25 || lpwm != rpwm) {
@@ -73,11 +73,11 @@ float cac(float st=dt) {
 	lpwm += wr-rpwm; rpwm += wl-lpwm; //Serial.print("AFR | L : ");  Serial.print(lpwm); Serial.print(" R: "); Serial.println(rpwm);
 	last_error = error;
 	
-	if ((clc < 80) && (crc < 80) ){//} || (lpwm / rpwm < 1.35 && lpwm / rpwm>0.7)) {
+	if ((clc < 80) && (crc < 80) || (lpwm / rpwm < 1.15 && lpwm / rpwm>0.9)) {
 		ercount++;  //Serial.println("STRT");
 }// Serial.print("strcount++  "); Serial.println(ercount);}
 	else ercount = 0;
-	if (ercount > 20) { tankLR(250, 250, st); acc_error = 0; }
+	if (ercount > 15) { tankLR(250, 250, st); acc_error = 0; }// Serial.println("acc reset"); }
 	else tankLR(lpwm, rpwm, st);
 	return gtheta(wl, wr);
 
@@ -160,26 +160,26 @@ int sts = 0;
 //float left_ths[10], right_ths[10];
 double ths, left_ths, right_ths;
 
-void loop() {
+oid loop() {
 
 	/*if (sts != checkDigital()) {
 		sts = checkDigital();
-		tankLR(0, 0, 0.1);//Í∞êÏÜç ÌôïÏû•
+		tankLR(0, 0, 0.1);//∞®º” »Æ¿Â
 
-		Serial.println("thresholdmod begin");//Ï≤¥ÌÅ¨ Ïù¥ÌÉà
+		Serial.println("thresholdmod begin");//√º≈© ¿Ã≈ª
 		while (checkDigital()) { tankLR(lpwm * 0.8, rpwm * 0.8, dt); };
 
-		Serial.println("Start measuring");//Í≥°ÏÑù ÌöåÏ†ÑÍ∞í Ï∏°Ï†ï
+		Serial.println("Start measuring");//∞ÓºÆ »∏¿¸∞™ √¯¡§
 		int sumcount = 0; bool breakpoint = false;
-		for (int i = 0; i < 1000; i++) {
+		for (int i = 0; i < 50; i++) {
 			ths += cac(0.001); sumcount++; if (checkDigital()) { breakpoint = true;  break; }
 		}
 		if (!breakpoint) {
 			Serial.println("Ended the measure"); //tankLR(0, 0, 5);
 			ths /= sumcount;// ths / 100 + ths - ths * (ths / 100); Serial.println(ths);
 			if (ths < 0) ths *= -1;
-			ths = round(ths * 100 / 100)*0.55;
-			Serial.print("AVG ths: "); Serial.println(ths);//ÌöåÏ†Ñ ÌèâÍ∑†Í≥ÑÏÇ∞
+			ths = round(ths * 100 / 100);// *0.9;
+			Serial.print("AVG ths: "); Serial.println(ths);//»∏¿¸ ∆Ú±’∞ËªÍ
 
 
 			if (sts == 1) { left_ths = 200.0 - ths; right_ths = 200.0; }
@@ -187,16 +187,18 @@ void loop() {
 			Serial.print("LEFTts: "); Serial.print(left_ths); Serial.print("   RIGHTts: "); Serial.println(right_ths);
 
 			Serial.println("turning");
-			while (!checkDigital()) { tankLR(left_ths, right_ths, dt); }
+			while (!checkDigital() && !(analogRead(lc)==analogRead(rc)&&analogRead(lc)==25)) { tankLR(left_ths, right_ths, dt); }
 			//while (checkDigital()) { tankLR(lpwm * 0.8, rpwm * 0.8, dt); }
-			}
-		
-		tankLR(0, 0, 0.1);
-		for (int i = 0; i < 100; i++) { cac(0.001); }
+		}
+		Serial.println("Escape");
+		tankLR(0,0, 0.05);
+		for (int i = 0; i < 80; i++) { cac(0.001); }
+		sts = 0;
 		Serial.println("SEQUENCE END");
 	}
-	else*/ 
-	if (checkDigital()) tankLR(0, 0, 0.3);
-	th1 = cac(0.001);
-
+	else {
+	//if (checkDigital()) tankLR(0, 0, 0.3);*/
+	th1 = cac(0.0001);
 }
+
+//}
