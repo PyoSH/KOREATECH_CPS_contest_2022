@@ -27,9 +27,9 @@
 #define SNS_MIN 25 // 센서 입력값 최소한계
 #define MOT_MAX 254 // 모터 출력 최대한계
 #define MOT_MIN 124 // 모터 출력 최소한계
-#define STOP_TIME 5300 // 정지 시간
-#define TURN_TIME 5300 // 회전 시간
-#define WAIT_TIME 5500 // 움직임과 움직임 사이 대기 시간
+#define STOP_TIME 2500 // 정지 시간
+#define TURN_TIME 2500 // 회전 시간
+#define WAIT_TIME 3000 // 움직임과 움직임 사이 대기 시간
 #define THRES 600 // 검정 선 임계값 
 
 #define TERMINATE '\r'
@@ -77,9 +77,9 @@ unsigned long chk_time; // 동작 조절 위한 시간
 float error = 0;
 float p_error = 0;
 float acc_error = 0;
-float P_GAIN = 0.105; // 0.305
+float P_GAIN = 1.25; // 0.305
 float I_GAIN = 0.000; //0.0007
-float D_GAIN = 0.001;
+float D_GAIN = 0.0;
 float dt = 0.0001;
 
 // 통신 시작, 핀 할당
@@ -136,7 +136,7 @@ void LineTrack(int &count_line) {
 	float I_value = I_GAIN * acc_error*dt;
 	float D_value = D_GAIN * (error - p_error) / dt;
 
-	float control_value = P_value + D_value;
+	float control_value = P_value + I_value + D_value;
 
 	//printf("!~ "); 에러 체크용
 	
@@ -186,11 +186,22 @@ bool NextMove(int&count_line, int count_tgt) {
 			return false;
 		}		
 	case 1: {
-		while (0 < m_step&& m_step < 2 || !stop_on) {
+		while (0 < m_step&& m_step < 2) {
 			LineTrack(count_line);
+			if ((contest_move == 7 || contest_move == 19 || contest_move == 28))
+				rw = lw = 25;
 			OutputProcess();
+			
 			//printf(" ");
 			if (stop_on || ((count_tgt -1) <count_line && count_line <= count_tgt)) {
+				
+				if ((contest_move == 7 || contest_move == 19 || contest_move == 21 || contest_move == 28) && count_line ==count_tgt) {
+					rw = lw = 0;
+					printf("show");
+					m_step = 3;
+					
+				}	
+				
 				m_step++;
 				break;
 			}
@@ -203,9 +214,9 @@ bool NextMove(int&count_line, int count_tgt) {
 		while ( (1< m_step && m_step <= 2) ) {
 			LineTrack(count_line);
 			if ((count_tgt - 1) < count_line && count_line <= count_tgt) {
-				if (contest_move == 7 || contest_move == 19 || contest_move == 21 || contest_move == 28) {
-					rw = lw = 0;
-				}
+				//if (contest_move == 7 || contest_move == 19 || contest_move == 21 || contest_move == 28) {
+				//	rw = lw = 0;
+				//}
 				rw = lw = 0;}
 			//delay(350);
 			OutputProcess();
@@ -262,6 +273,33 @@ bool Turn(int dir) {
 		return false;
 	default:
 		if (m_step >= 4) {
+			rw = lw = 0;
+		}
+		return true;
+	}
+}
+
+bool Turn_Point() {
+	static unsigned long chkT;
+	bool turn_on = ((millis() - chkT ) >= TURN_TIME);
+	bool wait_on = ((millis() - chkT ) >= WAIT_TIME);
+	switch (m_step) {
+	case 0:
+		rw = -100 ;
+		lw = 100 ;
+		if(ls < THRES) m_step++;
+		if (rs < THRES) m_step++;
+		return false;
+	case 1:
+		if (turn_on) m_step++;
+		else m_step--;
+		return false;
+	case 2:
+		rw = lw = 0;
+		if (wait_on) m_step++;
+		return false;
+	default:
+		if (m_step >= 3) {
 			rw = lw = 0;
 		}
 		return true;
@@ -424,7 +462,7 @@ void loop() {
 		  break;
 		  // -----------------------1st PICK UP, GO TO POINT "C"------------------------------
 	case 9: { // 좌회전
-		if (Turn(-1)) {
+		if (Turn_Point()) {
 			m_step = 0;
 			contest_move++;
 		}
@@ -462,7 +500,7 @@ void loop() {
 		   break;
 	// -----------------------1st MISSION DONE, GO TO POINT "2"------------------------------
 	case 16: { // 회전 to 돌아서 나가기
-		if (Turn(-1)) {
+		if (Turn_Point()) {
 			m_step = 0;
 			contest_move++;
 		}
@@ -500,7 +538,7 @@ void loop() {
 		   break;
 	// ----------------------2nd PICK UP,,  GO TO POINT "E"-----------------
 	case 23: { // 회전 to 돌아서 나가기
-		if (Turn(1)) {
+		if (Turn_Point()) {
 			m_step = 0;
 			contest_move++;
 		}
@@ -539,7 +577,7 @@ void loop() {
 		   break;
 	// -----------------------2nd MISSION DONE, GO TO GOAL------------------------------
 	case 30: { // 회전 to 돌아서 나가기
-		if (Turn(-1)) {
+		if (Turn_Point()) {
 			m_step = 0;
 			contest_move++;
 		}
@@ -564,11 +602,13 @@ void loop() {
 
 	default: {
 		contest_move = m_step = 0;
+		acc_error = p_error = error = 0;
 		rw = lw = 0;
 		count_line = 0;
 		move_target = 0;
+		acc_error = p_error=error = 0;
 		printdata(contest_move, count_line);
-
+		OutputProcess(); // 출력 최신화
 		if (pcontest_move == 33 && contest_move == 0) {
 			exit(0);
 		}
