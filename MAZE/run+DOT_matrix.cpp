@@ -1,7 +1,10 @@
 //#include "VArduino.h"
 #include <math.h>
+#include "LedControl.h"
 #define TERMINATE '\r'
 String cmd, data, buff;
+
+LedControl lc = LedControl(9, 8, 7, 1);
 
 int dv_mode = 0;
 bool x, y, z;
@@ -75,8 +78,8 @@ bool U_turn(double ct)
 		//rw,lw 속도값 (속도 튜닝 필)
 		rw = -180;
 		lw = 180;
-		if ((ct - chkTime) >= 1.5) // 0.6은 회전시간 (시간 튜닝 필) 
-			// (0) 0.6 (1) 0.8 (2) 1.5
+		if ((ct - chkTime) >= 1.46) // 0.6은 회전시간 (시간 튜닝 필) 
+			// (0) 0.6 (1) 0.8 (2) 1.5-230 (3) 1.0 (4) 1.3 (5) 1.47 (6) 1.46
 		{
 			m_step++;
 			chkTime = ct;
@@ -109,8 +112,8 @@ bool U_turn(double ct)
 			double err2 = 1.5 * (err - angle);
 
 			//속도 150값을 적절한 값으로 변경 
-			rw = Limit((int)(200 + err2), 255, 0); // (0)150
-			lw = Limit((int)(200 - err2), 255, 0); // (0)150
+			rw = Limit((int)(200 + err2), 255, 0); // (0)150 (1) 200
+			lw = Limit((int)(200 - err2), 255, 0); // (0)150 (1) 200
 		}
 
 		if ((rs < 150) && (ls < 150))
@@ -135,8 +138,9 @@ bool RL_Turn(double ct, int turn)
 		if (turn == 1) //우회전시 
 		{
 			rw = lw = 250; //튜닝 필
-			if ((ct - chkTime) >= 0.9) //튜닝 필 (0) 0.2 (1) 0.3 (2) 0.6 
+			if (((ct - chkTime) >= 1.4) || (fs <= 30)) //튜닝 필 (0) 0.2 (1) 0.3 (2) 0.6 (3) 0.9 (4) 1.4
 			{
+
 				m_step++;
 				chkTime = ct;
 
@@ -146,8 +150,14 @@ bool RL_Turn(double ct, int turn)
 		{
 			rw = lw = 250; //튜닝 필 (0) 150 (1) 220
 
-			if ((ct - chkTime) >= 0.7) //튜닝 필 (0) 0.1 (1) 0.3 (2) 0.6
+			if ((ct - chkTime) >= 0.5 || (fs <= 30)) //튜닝 필 (0) 0.1 (1) 0.3 (2) 0.6 (3) 0.7 (4) 0.5
 			{
+				/*if (fs <= 30) {
+					analogWrite(7, 100);
+				}
+				else {
+					analogWrite(7, 0);
+				}*/
 				m_step++;
 				chkTime = ct;
 			}
@@ -239,9 +249,98 @@ bool ave_velo(double ct)
 
 
 /////////////////////////////////////////////////
+byte LEFT_arry[] = {
+	B10000000,
+	B01000000,
+	B00100000,
+	B00000000,
+	B00000000,
+	B00000000,
+	B00000000,
+	B00000000
+};
+byte RIGHT_arry[] = {
+	B00000001,
+	B00000010,
+	B00000100,
+	B00000000,
+	B00000000,
+	B00000000,
+	B00000000,
+	B00000000
+};
+byte FRONT_arry[] = {
+	B00011000,
+	B01011010,
+	B10011001,
+	B00011000,
+	B00011000,
+	B00011000,
+	B00011000,
+	B00011000
+};
+byte TURN_arry[] = {
+	B00000100,
+	B00001001,
+	B00010001,
+	B00100001,
+	B00100001,
+	B10101001,
+	B01110001,
+	B00100000
+};
 
+void display_LEFT(int a) {
+	if (a == 0) {
+		for (int i = 0; i < 8; i++) {
+			lc.setRow(0, i, LEFT_arry[i]);
+		}
+	}
+	else {
+		for (int i = 0; i < 8; i++) {
+			lc.setRow(0, i, B00000000);
+		}
+	}
+}
 
+void display_RIGHT(int a) {
+	if (a == 0) {
+		for (int i = 0; i < 8; i++) {
+			lc.setRow(0, i, RIGHT_arry[i]);
+		}
+	}
+	else {
+		for (int i = 0; i < 8; i++) {
+			lc.setRow(0, i, B00000000);
+		}
+	}
+}
 
+void display_FRONT(int a) {
+	if (a == 0) {
+		for (int i = 0; i < 8; i++) {
+			lc.setRow(0, i, FRONT_arry[i]);
+		}
+	}
+	else {
+		for (int i = 0; i < 8; i++) {
+			lc.setRow(0, i, B00000000);
+		}
+	}
+}
+
+void display_TURN(int a) {
+	if (a == 0) {
+		for (int i = 0; i < 8; i++) {
+			lc.setRow(0, i, TURN_arry[i]);
+		}
+	}
+	else {
+		for (int i = 0; i < 8; i++) {
+			lc.setRow(0, i, B00000000);
+		}
+	}
+}
 //////////////노필요 구간/////////////
 
 //리미트 함수
@@ -269,18 +368,6 @@ bool SerialRead()
 	}
 	return false;
 }
-//그냥 직진 함수 ( 사용안함)
-bool Forward(double ct)
-{
-	rw = lw = 150;
-	if ((ct - chkTime) >= 0.1)
-	{
-		return true;
-	}
-	return false;
-}
-
-///////////////////////////////////////
 
 
 void setup() {
@@ -288,6 +375,14 @@ void setup() {
 	pinMode(12, OUTPUT); //좌우센서 
 	pinMode(13, OUTPUT);
 	pinMode(2, INPUT); //스위치
+	//pinMode(7, OUTPUT); // 도트 매트릭스 
+	//pinMode(8, OUTPUT); // 도트 매트릭스 
+	//pinMode(9, OUTPUT); // 도트 매트릭스 
+
+	lc.shutdown(0, false);
+	lc.setIntensity(0, 5);
+	lc.clearDisplay(0);
+
 	Serial.print("click button");
 
 }
@@ -383,7 +478,6 @@ void loop() {
 
 		////////////////////////////////////////
 
-
 		//상황별 판단 
 		if (STEP == 0)
 		{
@@ -397,8 +491,9 @@ void loop() {
 
 			else if (!rs_on && !ls_on && fs_on) //벽+ 벽 + 열 
 			{
-
+				display_FRONT(1);
 				Linear(ct, ls, av); //전진
+				display_FRONT(0);
 			}
 
 			else if (!rs_on && ls_on && (fs <= 150)) //벽+열+벽
@@ -409,10 +504,10 @@ void loop() {
 
 			else if (!rs_on && ls_on && fs_on) //벽+열+열
 			{
-
+				display_FRONT(1);
 				//전진
 				Linear(ct, b - rs - a, av); //좌 센서 값은 측정 값이 아닌 계산값으로 대체 
-
+				display_FRONT(0);
 			}
 			else //그 외의 경우는 모두 우회전 
 			{
@@ -428,20 +523,31 @@ void loop() {
 
 
 		}
+
+
 		else if (STEP == 1)//유턴
 		{
-			if (U_turn(ct))
+			display_TURN(1);
+			if (U_turn(ct)) {
 				m_step = STEP = 0;
+				display_TURN(0);
+			}
 		}
 		else if (STEP == 2)//좌회전
 		{
-			if (RL_Turn(ct, -1))
+			display_LEFT(1);
+			if (RL_Turn(ct, -1)) {
 				m_step = STEP = 0;
+				display_LEFT(0);
+			}
 		}
 		else if (STEP == 4)//우회전
 		{
-			if (RL_Turn(ct, 1))
+			display_RIGHT(1);
+			if (RL_Turn(ct, 1)) {
 				m_step = STEP = 0;
+				display_RIGHT(0);
+			}
 		}
 
 
@@ -450,13 +556,6 @@ void loop() {
 		analogWrite(10, abs(rw));
 		analogWrite(11, abs(lw));
 	}
-
-
-
-
-
-
-
 
 
 }
