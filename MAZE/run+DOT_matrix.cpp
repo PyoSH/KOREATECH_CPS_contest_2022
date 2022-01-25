@@ -42,6 +42,7 @@ int av = 255; //평균 주행 속도 (원한다면 튜닝)
 //벽 추종 직진 함수 (튜닝)
 void Linear(double ct, int ls, int v)
 {
+	display_FRONT(1);
 	if ((ct - prevTime) >= 0.1) {
 		prevTime = ct;
 
@@ -64,18 +65,15 @@ void Linear(double ct, int ls, int v)
 		rw = Limit((int)(v + err2), 255, 0);
 		lw = Limit((int)(v - err2), 255, 0);
 
-
-
-
-
 	}
+	display_FRONT(0);
 }
 
 //유턴함수(튜닝필)
 bool U_turn(double ct)
 {
 	//case0 유턴 > case1 직진
-
+	display_TURN(1);
 	switch (m_step)
 	{
 	case 0:
@@ -126,8 +124,11 @@ bool U_turn(double ct)
 		}
 		return false;
 
-	default:
+	default: {
+		display_TURN(0);
 		return true;
+	}
+		
 
 	}
 }
@@ -140,6 +141,7 @@ bool RL_Turn(double ct, int turn)
 	case 0:
 		if (turn == 1) //우회전시 
 		{
+			display_RIGHT(1);
 			rw = lw = 250; //튜닝 필
 			if (((ct - chkTime) >= 1.2) || (fs <= 30)) //튜닝 필 (0) 0.2 (1) 0.3 (2) 0.6 (3) 0.9 (4) 1.4(배터리 절반-250) (5) 1.2
 			{
@@ -151,6 +153,7 @@ bool RL_Turn(double ct, int turn)
 		}
 		else if (turn == -1) //좌회전시 
 		{
+			display_LEFT(1);
 			rw = lw = 250; //튜닝 필 (0) 150 (1) 220
 
 			if ((ct - chkTime) >= 0.4 || (fs <= 30)) //튜닝 필 (0) 0.1 (1) 0.3 (2) 0.6 (3) 0.7 (4) 0.5(배터리절반-250) (5) 0.4
@@ -176,6 +179,7 @@ bool RL_Turn(double ct, int turn)
 			lw = 220 * turn;
 			if ((ct - chkTime) >= 0.8) //시간 튜닝 필 (0) 0.65 (1) 0.85(배터리절반-250)
 			{
+				//display_RIGHT(0);
 				m_step++;
 				chkTime = ct;
 				/*
@@ -194,6 +198,7 @@ bool RL_Turn(double ct, int turn)
 			lw = 248 * turn;
 			if ((ct - chkTime) >= 0.8) //튜닝 (0)0.55 (1) 0.85(배터리절반-250)
 			{
+				//display_LEFT(0);
 				m_step++;
 				chkTime = ct;
 				/*
@@ -213,6 +218,7 @@ bool RL_Turn(double ct, int turn)
 			rw = lw = 240; //튜닝(0) 200
 			if ((ct - chkTime) >= 1.0) //튜닝 (0) 0.6 (1) 1.0
 			{
+				display_RIGHT(0);
 				m_step++;
 				chkTime = ct;
 			}
@@ -223,6 +229,7 @@ bool RL_Turn(double ct, int turn)
 			rw = lw = 240; //튜닝(0) 200
 			if ((ct - chkTime) >= 1.0) //튜닝 (0) 0.6 (1) 1.0
 			{
+				display_LEFT(0);
 				m_step++;
 				chkTime = ct;
 			}
@@ -252,45 +259,45 @@ bool ave_velo(double ct)
 
 
 /////////////////////////////////////////////////
-byte LEFT_arry[] = {
-	B10000000,
-	B01000000,
-	B00100000,
-	B00000000,
-	B00000000,
-	B00000000,
-	B00000000,
-	B00000000
+byte LEFT_arry[] = { 
+	B00010000,
+	B00110000,
+	B01110000,
+	B11111111,
+	B11111111,
+	B01110000,
+	B00110000,
+	B00010000 
 };
-byte RIGHT_arry[] = {
-	B00000001,
-	B00000010,
-	B00000100,
-	B00000000,
-	B00000000,
-	B00000000,
-	B00000000,
-	B00000000
+byte RIGHT_arry[] = { 
+	B00001000,
+	B00001100,
+	B00001110,
+	B11111111,
+	B11111111,
+	B00001110,
+	B00001100,
+	B00001000 
 };
-byte FRONT_arry[] = {
+byte FRONT_arry[] = { 
 	B00011000,
-	B01011010,
-	B10011001,
+	B00111100,
+	B01111110,
+	B11111111,
 	B00011000,
 	B00011000,
 	B00011000,
-	B00011000,
-	B00011000
+	B00011000 
 };
-byte TURN_arry[] = {
-	B00000100,
-	B00001001,
-	B00010001,
-	B00100001,
-	B00100001,
-	B10101001,
-	B01110001,
-	B00100000
+byte TURN_arry[] = { 
+	B00000000,
+	B00110000,
+	B01111100,
+	B01000100,
+	B01000100,
+	B01011111,
+	B01001110,
+	B01000100 
 };
 ////////////////////////////////////////
 void display_LEFT(int a) {
@@ -441,10 +448,10 @@ void loop() {
 		//상황 변경시 
 		if (STEP != pSTEP)
 		{
-			display_FRONT(0);
+			/*display_FRONT(0);
 			display_LEFT(0);
 			display_RIGHT(0);
-			display_TURN(0);
+			display_TURN(0);*/
 
 
 			char wBuff[64];
@@ -463,7 +470,7 @@ void loop() {
 			dv_mode = 1; //속도 저감모드 on
 			dv_chkTime = ct;//속도 저감모드 시작 시간 저장 
 
-			switch (STEP)
+			/*switch (STEP)
 			{
 			case 0:{
 				Serial.println("FRONT");
@@ -487,7 +494,7 @@ void loop() {
 			}
 			default:
 				break;
-			}
+			}*/
 
 
 			pSTEP = STEP;
@@ -534,16 +541,12 @@ void loop() {
 
 			if (!rs_on && !ls_on && !fs_on) //벽 + 벽 + 벽
 			{
-				//display_TURN(1);
 				STEP = 1; //유턴
-				//display_TURN(0);
 			}
 
 			else if (!rs_on && !ls_on && fs_on) //벽+ 벽 + 열 
 			{
-				//display_FRONT(1);
 				Linear(ct, ls, av); //전진
-				//display_FRONT(0);
 			}
 
 			else if (!rs_on && ls_on && (fs <= 150)) //벽+열+벽
@@ -554,10 +557,8 @@ void loop() {
 
 			else if (!rs_on && ls_on && fs_on) //벽+열+열
 			{
-				//display_FRONT(1);
 				//전진
 				Linear(ct, b - rs - a, av); //좌 센서 값은 측정 값이 아닌 계산값으로 대체 
-				//display_FRONT(0);
 			}
 			else //그 외의 경우는 모두 우회전 
 			{
@@ -577,26 +578,21 @@ void loop() {
 
 		else if (STEP == 1)//유턴
 		{
-			//display_TURN(1);
 			if (U_turn(ct)) {
 				m_step = STEP = 0;
-			//	display_TURN(0);
 			}
 		}
 		else if (STEP == 2)//좌회전
 		{
-			//display_LEFT(1);
 			if (RL_Turn(ct, -1)) {
 				m_step = STEP = 0;
-			//	display_LEFT(0);
 			}
 		}
 		else if (STEP == 4)//우회전
 		{
-			//display_RIGHT(1);
 			if (RL_Turn(ct, 1)) {
 				m_step = STEP = 0;
-			//	display_RIGHT(0);
+			
 			}
 		}
 
