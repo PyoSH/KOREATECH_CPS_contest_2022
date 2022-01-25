@@ -25,8 +25,8 @@ int pre_button = 0;
 int start = 0;
 
 bool nodechek = false;
-int node[100];
-int noderoute[100];
+int node PROGMEM[50];
+int noderoute PROGMEM[50];
 int nodeindex = 0;
 
 //int blueTx = 1;   //Tx (보내는핀 설정)at
@@ -520,32 +520,32 @@ void loop() {
                 donode(3);
                 pSTEP = STEP;
             }
-            else{
-            /*display_FRONT(0);
-            display_LEFT(0);
-            display_RIGHT(0);
-            display_TURN(0);*/
+            else {
+                /*display_FRONT(0);
+                display_LEFT(0);
+                display_RIGHT(0);
+                display_TURN(0);*/
 
 
-            char wBuff[64];
-            int wLeng = sprintf(wBuff, "STEP:%d\r\n", STEP); //현재 상황 출력
-            //Serial.write(wBuff, wLeng);
+                char wBuff[64];
+                int wLeng = sprintf(wBuff, "STEP:%d\r\n", STEP); //현재 상황 출력
+                //Serial.write(wBuff, wLeng);
 
-            //디버깅용
-            //Serial.println(x);
-            //Serial.println(y);
-            //Serial.println(z);
-            //Serial.println(r_d);
-            //Serial.println(l_d);
-            //Serial.println(f_d);
+                //디버깅용
+                //Serial.println(x);
+                //Serial.println(y);
+                //Serial.println(z);
+                //Serial.println(r_d);
+                //Serial.println(l_d);
+                //Serial.println(f_d);
 
 
-            dv_mode = 1; //속도 저감모드 on
-            dv_chkTime = ct;//속도 저감모드 시작 시간 저장 
+                dv_mode = 1; //속도 저감모드 on
+                dv_chkTime = ct;//속도 저감모드 시작 시간 저장 
 
-            pSTEP = STEP;
+                pSTEP = STEP;
 
-            //Serial.write(STEP);
+                //Serial.write(STEP);
             }
         }
 
@@ -582,7 +582,7 @@ void loop() {
         ////////////////////////////////////////
 
         //상황별 판단 
-        if (STEP == 0||STEP==3)
+        if (STEP == 0 || STEP == 3)
         {
 
             chkTime = ct;
