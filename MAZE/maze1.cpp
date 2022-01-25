@@ -1,10 +1,7 @@
-//#include "VArduino.h"
 #include <math.h>
 #include "LedControl.h"
-
 #define TERMINATE '\r'
 String cmd, data, buff;
-
 LedControl lc = LedControl(9, 8, 7, 1);
 
 int dv_mode = 0;
@@ -25,33 +22,21 @@ int pre_button = 0;
 int start = 0;
 
 bool nodechek = false;
-int node PROGMEM[50];
-int noderoute PROGMEM[50];
+char node[30];
+char noderoute[30];
 int nodeindex = 0;
 
-//int blueTx = 1;   //Tx (º¸³»´ÂÇÉ ¼³Á¤)at
-//int blueRx = 0;   //Rx (¹Ş´ÂÇÉ ¼³Á¤)
-//SoftwareSerial mySerial(blueTx, blueRx);  //½Ã¸®¾ó Åë½ÅÀ» À§ÇÑ °´Ã¼¼±¾ğ
+double target = 85;
+double kp1 = 2, kp2 = 4;
+const int b = 230;
+const int a = 60;
+int av = 255;
 
 
-//////////////////Æ©´× ÇÊ¼ö//////////////////////
-
-//À¯ÅÏ, ÁÂ¿ì ÅÏ Á÷ÁøÇÔ¼ö¿¡ µé¾î°¡ ÀÖ´Â ÅÏ ¼Óµµ¿Í ½Ã°£ Æ©´× ÇÊ¼ö 
-
-double target = 85; //º®°úÀÇ ¸ñÇ¥°Å¸® (Æ©´×ÇÊ¿ä)
-double kp1 = 2, kp2 = 4; //ºñ·ÊÁ¦¾î (Æ©´×ÇÊ¿ä) (0) 1, 2 (1) 
-const int b = 230; //º® »çÀÌ°£ °Å¸® (Æ©´×ÇÊ¿ä) (0) 250
-const int a = 60;  //¼¾¼­ °£°İ °Å¸® (Æ©´×ÇÊ¿ä) (0)79 
-int av = 255; //Æò±Õ ÁÖÇà ¼Óµµ (¿øÇÑ´Ù¸é Æ©´×)
-
-//º® ÃßÁ¾ Á÷Áø ÇÔ¼ö (Æ©´×)
 void Linear(double ct, int ls, int v)
 {
-    //display_FRONT(1);
     if ((ct - prevTime) >= 0.1) {
         prevTime = ct;
-
-
 
         int ds = (rs - prs);
         dir = ds > 0 ? 1 : ds < 0 ? -1 : dir;
@@ -62,37 +47,35 @@ void Linear(double ct, int ls, int v)
         angle = rad * RAD_TO_DEG * dir;
         d = (int)(rs * cos(rad));
 
-        //ºñ·ÊÁ¦¾î ÆÄÆ® (kp1,kp2 Æ©´× ÇÊ)
-        double err = kp1 * (target - d); // º® »çÀÌ °Å¸® Á¶Á¤
-        double err2 = kp2 * (err - angle);// ·Îº¿ÀÇ ±â¿ï±â °¢µµ Á¶Á¤ 
+        double err = kp1 * (target - d);
+        double err2 = kp2 * (err - angle);
 
 
         rw = Limit((int)(v + err2), 255, 0);
         lw = Limit((int)(v - err2), 255, 0);
 
     }
-    //display_FRONT(0);
 }
 
-//À¯ÅÏÇÔ¼ö(Æ©´×ÇÊ)
+
 bool U_turn(double ct)
 {
-    //case0 À¯ÅÏ > case1 Á÷Áø
+    //case0 ìœ í„´ > case1 ì§ì§„
     //display_TURN(1);
     switch (m_step)
     {
     case 0:
 
-        //rw,lw ¼Óµµ°ª (¼Óµµ Æ©´× ÇÊ)
+        //rw,lw ì†ë„ê°’ (ì†ë„ íŠœë‹ í•„)
         rw = -180;
         lw = 180;
-        if ((ct - chkTime) >= 1.36) // 0.6Àº È¸Àü½Ã°£ (½Ã°£ Æ©´× ÇÊ) 
-          // (0) 0.6 (1) 0.8 (2) 1.5-230 (6) 1.46(¹èÅÍ¸® Àı¹İÁ¤µµ-250) (7) 1.4
+        if ((ct - chkTime) >= 1.36) // 0.6ì€ íšŒì „ì‹œê°„ (ì‹œê°„ íŠœë‹ í•„) 
+          // (0) 0.6 (1) 0.8 (2) 1.5-230 (6) 1.46(ë°°í„°ë¦¬ ì ˆë°˜ì •ë„-250) (7) 1.4
         {
             m_step++;
             chkTime = ct;
             delayChkTime = ct;
-            while ((ct - delayChkTime) <= 0.3) //delay(300)°ú µ¿ÀÏ 
+            while ((ct - delayChkTime) <= 0.3) //delay(300)ê³¼ ë™ì¼ 
             {
                 ct = (double)millis() / 1000;
 
@@ -100,7 +83,7 @@ bool U_turn(double ct)
         }
         return false;
 
-    case 1://º® ÃßÁ¾ Á÷ÁøÇÔ¼ö¿Í µ¿ÀÏ(¼Óµµ Æ©´× ÇÊ)
+    case 1://ë²½ ì¶”ì¢… ì§ì§„í•¨ìˆ˜ì™€ ë™ì¼(ì†ë„ íŠœë‹ í•„)
         if ((ct - prevTime) >= 0.1) {
             prevTime = ct;
 
@@ -113,11 +96,11 @@ bool U_turn(double ct)
             angle = rad * RAD_TO_DEG * dir;
             d = (int)(rs * cos(rad));
 
-            //kp1°ú 1.5¸¦ ÀûÀıÇÑ ºñ·Ê°ªÀ¸·Î º¯°æ
+            //kp1ê³¼ 1.5ë¥¼ ì ì ˆí•œ ë¹„ë¡€ê°’ìœ¼ë¡œ ë³€ê²½
             double err = kp1 * (target - d);
             double err2 = 1.5 * (err - angle);
 
-            //¼Óµµ 150°ªÀ» ÀûÀıÇÑ °ªÀ¸·Î º¯°æ 
+            //ì†ë„ 150ê°’ì„ ì ì ˆí•œ ê°’ìœ¼ë¡œ ë³€ê²½ 
             rw = Limit((int)(200 + err2), 255, 0); // (0)150 (1) 200
             lw = Limit((int)(200 - err2), 255, 0); // (0)150 (1) 200
         }
@@ -138,17 +121,17 @@ bool U_turn(double ct)
     }
 }
 
-//ÁÂ¿ì ÅÏ ÇÔ¼ö(Æ©´×ÇÊ)
+//ì¢Œìš° í„´ í•¨ìˆ˜(íŠœë‹í•„)
 bool RL_Turn(double ct, int turn)
 {
-    switch (m_step) //case0 Á÷Áø > case1 ÅÏ > case2 Á÷Áø
+    switch (m_step) //case0 ì§ì§„ > case1 í„´ > case2 ì§ì§„
     {
     case 0:
-        if (turn == 1) //¿ìÈ¸Àü½Ã 
+        if (turn == 1) //ìš°íšŒì „ì‹œ 
         {
             //display_RIGHT(1);
-            rw = lw = 250; //Æ©´× ÇÊ
-            if (((ct - chkTime) >= 1.2) || (fs <= 30)) //Æ©´× ÇÊ (0) 0.2 (1) 0.3 (2) 0.6 (3) 0.9 (4) 1.4(¹èÅÍ¸® Àı¹İ-250) (5) 1.2
+            rw = lw = 250; //íŠœë‹ í•„
+            if (((ct - chkTime) >= 1.2) || (fs <= 30)) //íŠœë‹ í•„ (0) 0.2 (1) 0.3 (2) 0.6 (3) 0.9 (4) 1.4(ë°°í„°ë¦¬ ì ˆë°˜-250) (5) 1.2
             {
 
                 m_step++;
@@ -156,12 +139,12 @@ bool RL_Turn(double ct, int turn)
 
             }
         }
-        else if (turn == -1) //ÁÂÈ¸Àü½Ã 
+        else if (turn == -1) //ì¢ŒíšŒì „ì‹œ 
         {
             //display_LEFT(1);
-            rw = lw = 250; //Æ©´× ÇÊ (0) 150 (1) 220
+            rw = lw = 250; //íŠœë‹ í•„ (0) 150 (1) 220
 
-            if ((ct - chkTime) >= 0.4 || (fs <= 30)) //Æ©´× ÇÊ (0) 0.1 (1) 0.3 (2) 0.6 (3) 0.7 (4) 0.5(¹èÅÍ¸®Àı¹İ-250) (5) 0.4
+            if ((ct - chkTime) >= 0.4 || (fs <= 30)) //íŠœë‹ í•„ (0) 0.1 (1) 0.3 (2) 0.6 (3) 0.7 (4) 0.5(ë°°í„°ë¦¬ì ˆë°˜-250) (5) 0.4
             {
                 /*if (fs <= 30) {
                   analogWrite(7, 100);
@@ -180,9 +163,9 @@ bool RL_Turn(double ct, int turn)
     case 1:
         if (turn == 1)
         {
-            rw = -220 * turn; //ÁÂ¿ì Æ©´×ÇÊ
+            rw = -220 * turn; //ì¢Œìš° íŠœë‹í•„
             lw = 220 * turn;
-            if ((ct - chkTime) >= 0.8) //½Ã°£ Æ©´× ÇÊ (0) 0.65 (1) 0.85(¹èÅÍ¸®Àı¹İ-250)
+            if ((ct - chkTime) >= 0.8) //ì‹œê°„ íŠœë‹ í•„ (0) 0.65 (1) 0.85(ë°°í„°ë¦¬ì ˆë°˜-250)
             {
                 //display_RIGHT(0);
                 m_step++;
@@ -199,9 +182,9 @@ bool RL_Turn(double ct, int turn)
 
         else if (turn == -1)
         {
-            rw = -248 * turn; //Æ©´× (1) -228
+            rw = -248 * turn; //íŠœë‹ (1) -228
             lw = 248 * turn;
-            if ((ct - chkTime) >= 0.8) //Æ©´× (0)0.55 (1) 0.85(¹èÅÍ¸®Àı¹İ-250)
+            if ((ct - chkTime) >= 0.8) //íŠœë‹ (0)0.55 (1) 0.85(ë°°í„°ë¦¬ì ˆë°˜-250)
             {
                 //display_LEFT(0);
                 m_step++;
@@ -220,8 +203,8 @@ bool RL_Turn(double ct, int turn)
     case 2:
         if (turn == 1)
         {
-            rw = lw = 240; //Æ©´×(0) 200
-            if ((ct - chkTime) >= 1.0) //Æ©´× (0) 0.6 (1) 1.0
+            rw = lw = 240; //íŠœë‹(0) 200
+            if ((ct - chkTime) >= 1.0) //íŠœë‹ (0) 0.6 (1) 1.0
             {
                 //display_RIGHT(0);
                 m_step++;
@@ -231,8 +214,8 @@ bool RL_Turn(double ct, int turn)
         }
         else if (turn == -1)
         {
-            rw = lw = 240; //Æ©´×(0) 200
-            if ((ct - chkTime) >= 1.0) //Æ©´× (0) 0.6 (1) 1.0
+            rw = lw = 240; //íŠœë‹(0) 200
+            if ((ct - chkTime) >= 1.0) //íŠœë‹ (0) 0.6 (1) 1.0
             {
                 //display_LEFT(0);
                 m_step++;
@@ -247,12 +230,12 @@ bool RL_Turn(double ct, int turn)
     }
 }
 
-//»óÈ² º¯°æÈÄ ¼Óµµ °¨¼Ò ÇÔ¼ö (¿ëµµ : ¼Óµµ°¡ »¡¶ó ÄÁÆ®·Ñ ¾ÈµÉ¶§ »ç¿ë)(Æ©´× ÇÊ) 
+//ìƒí™© ë³€ê²½í›„ ì†ë„ ê°ì†Œ í•¨ìˆ˜ (ìš©ë„ : ì†ë„ê°€ ë¹¨ë¼ ì»¨íŠ¸ë¡¤ ì•ˆë ë•Œ ì‚¬ìš©)(íŠœë‹ í•„) 
 bool ave_velo(double ct)
 {
-    av = 160; //Æò±Õ ¼Óµµ °¨¼Ò (Æ©´× ÇÊ)
+    av = 160; //í‰ê·  ì†ë„ ê°ì†Œ (íŠœë‹ í•„)
 
-    if ((ct - dv_chkTime) >= 1) //½Ã°£ Æ©´× ÇÊ
+    if ((ct - dv_chkTime) >= 1) //ì‹œê°„ íŠœë‹ í•„
     {
         return true;
 
@@ -264,7 +247,9 @@ bool ave_velo(double ct)
 
 
 /////////////////////////////////////////////////
-byte STRT_arry[] = {
+byte bTemp;
+
+const byte STRT_arry[] PROGMEM = {
   B10011001,
   B01100110,
   B01000010,
@@ -275,7 +260,7 @@ byte STRT_arry[] = {
   B10011001
 };
 
-byte LEFT_arry[] = {
+const byte LEFT_arry[] PROGMEM = {
   B00010000,
   B00110000,
   B01110000,
@@ -285,7 +270,7 @@ byte LEFT_arry[] = {
   B00110000,
   B00010000
 };
-byte RIGHT_arry[] = {
+const byte RIGHT_arry[] PROGMEM = {
   B00001000,
   B00001100,
   B00001110,
@@ -295,7 +280,7 @@ byte RIGHT_arry[] = {
   B00001100,
   B00001000
 };
-byte FRONT_arry[] = {
+const byte FRONT_arry[] PROGMEM = {
   B00011000,
   B00111100,
   B01111110,
@@ -305,7 +290,7 @@ byte FRONT_arry[] = {
   B00011000,
   B00011000
 };
-byte TURN_arry[] = {
+const byte TURN_arry[] PROGMEM = {
   B00000000,
   B00110000,
   B01111100,
@@ -316,10 +301,14 @@ byte TURN_arry[] = {
   B01000100
 };
 ////////////////////////////////////////
-void display_STRT(int a) {
+/*void display_STRT(int a) {
     if (a == 0) {
+
         for (int i = 0; i < 8; i++) {
-            lc.setRow(0, i, STRT_arry[i]);
+            bTemp = pgm_read_byte_near(&(STRT_arry[i]));
+            lc.setRow(0, i, bTemp);
+            //lc.setRow(0, i, STRT_arry[i]);
+
         }
     }
     else {
@@ -332,7 +321,9 @@ void display_STRT(int a) {
 void display_LEFT(int a) {
     if (a == 0) {
         for (int i = 0; i < 8; i++) {
-            lc.setRow(0, i, LEFT_arry[i]);
+            bTemp = pgm_read_byte_near(&(LEFT_arry[i]));
+            //lc.setRow(0, i, LEFT_arry[i]);
+            lc.setRow(0, i, bTemp);
         }
     }
     else {
@@ -345,7 +336,9 @@ void display_LEFT(int a) {
 void display_RIGHT(int a) {
     if (a == 0) {
         for (int i = 0; i < 8; i++) {
-            lc.setRow(0, i, RIGHT_arry[i]);
+            bTemp = pgm_read_byte_near(&(RIGHT_arry[i]));
+            //lc.setRow(0, i, RIGHT_arry[i]);
+            lc.setRow(0, i, bTemp);
         }
     }
     else {
@@ -358,7 +351,9 @@ void display_RIGHT(int a) {
 void display_FRONT(int a) {
     if (a == 0) {
         for (int i = 0; i < 8; i++) {
-            lc.setRow(0, i, FRONT_arry[i]);
+            bTemp = pgm_read_byte_near(&(FRONT_arry[i]));
+            //lc.setRow(0, i, FRONT_arry[i]);
+            lc.setRow(0, i, bTemp);
         }
     }
     else {
@@ -371,7 +366,9 @@ void display_FRONT(int a) {
 void display_TURN(int a) {
     if (a == 0) {
         for (int i = 0; i < 8; i++) {
-            lc.setRow(0, i, TURN_arry[i]);
+            bTemp = pgm_read_byte_near(&(TURN_arry[i]));
+            //lc.setRow(0, i, TURN_arry[i]);
+            lc.setRow(0, i, bTemp);
         }
     }
     else {
@@ -379,28 +376,68 @@ void display_TURN(int a) {
             lc.setRow(0, i, B00000000);
         }
     }
-}
+}*/
 
 void DISPLAY_(int input) {
     if (input == 0) {
-        display_FRONT(1);
-        display_FRONT(0);
+        //display_FRONT(1);
+        for (int i = 0; i < 8; i++) {
+            lc.setRow(0, i, B00000000);
+        }
+        for (int i = 0; i < 8; i++) {
+            bTemp = pgm_read_byte_near(&(FRONT_arry[i]));
+            //lc.setRow(0, i, FRONT_arry[i]);
+            lc.setRow(0, i, bTemp);
+        }
+        //display_FRONT(0);
     }
     else if (input == 1) {
-        display_TURN(1);
-        display_TURN(0);
+        //display_TURN(1);
+        for (int i = 0; i < 8; i++) {
+            lc.setRow(0, i, B00000000);
+        }
+        for (int i = 0; i < 8; i++) {
+            bTemp = pgm_read_byte_near(&(TURN_arry[i]));
+            //lc.setRow(0, i, TURN_arry[i]);
+            lc.setRow(0, i, bTemp);
+        }
+        //display_TURN(0);
     }
     else if (input == 2) {
-        display_LEFT(1);
-        display_LEFT(0);
+        //display_LEFT(1);
+        for (int i = 0; i < 8; i++) {
+            lc.setRow(0, i, B00000000);
+        }
+        for (int i = 0; i < 8; i++) {
+            bTemp = pgm_read_byte_near(&(LEFT_arry[i]));
+            //lc.setRow(0, i, LEFT_arry[i]);
+            lc.setRow(0, i, bTemp);
+        }
+        //display_LEFT(0);
     }
     else if (input == 4) {
-        display_RIGHT(1);
-        display_RIGHT(0);
+        //display_RIGHT(1);
+        for (int i = 0; i < 8; i++) {
+            lc.setRow(0, i, B00000000);
+        }
+        for (int i = 0; i < 8; i++) {
+            bTemp = pgm_read_byte_near(&(RIGHT_arry[i]));
+            //lc.setRow(0, i, RIGHT_arry[i]);
+            lc.setRow(0, i, bTemp);
+        }
+        //display_RIGHT(0);
     }
     else if (input == 9) {
-        display_STRT(1);
-        display_STRT(0);
+        //display_STRT(1);
+        for (int i = 0; i < 8; i++) {
+            lc.setRow(0, i, B00000000);
+        }
+        for (int i = 0; i < 8; i++) {
+            bTemp = pgm_read_byte_near(&(STRT_arry[i]));
+            lc.setRow(0, i, bTemp);
+            //lc.setRow(0, i, STRT_arry[i])
+        }
+        //display_STRT(0);
     }
 
 
@@ -409,14 +446,14 @@ void DISPLAY_(int input) {
     lc.clearDisplay(0);} */
 }
 
-//////////////³ëÇÊ¿ä ±¸°£/////////////
+//////////////ë…¸í•„ìš” êµ¬ê°„/////////////
 
-//¸®¹ÌÆ® ÇÔ¼ö
+//ë¦¬ë¯¸íŠ¸ í•¨ìˆ˜
 int Limit(int a, int max, int min)
 {
     return a > max ? max : a < min ? min : a;
 }
-//½Ã¸®¾ó·Î Á¦¾î°è¼ö º¯°æ (µüÈ÷ ÇÊ¿ä ¾øÀ½)
+//ì‹œë¦¬ì–¼ë¡œ ì œì–´ê³„ìˆ˜ ë³€ê²½ (ë”±íˆ í•„ìš” ì—†ìŒ)
 bool SerialRead()
 {
     while (Serial.available() > 0) {
@@ -436,7 +473,7 @@ bool SerialRead()
     }
     return false;
 }
-//±×³É Á÷Áø ÇÔ¼ö ( »ç¿ë¾ÈÇÔ)
+//ê·¸ëƒ¥ ì§ì§„ í•¨ìˆ˜ ( ì‚¬ìš©ì•ˆí•¨)
 bool Forward(double ct)
 {
     rw = lw = 150;
@@ -452,24 +489,24 @@ bool Forward(double ct)
 
 void setup() {
     Serial.begin(9600);
-    pinMode(12, OUTPUT); //ÁÂ¿ì¼¾¼­ 
+    pinMode(12, OUTPUT); //ì¢Œìš°ì„¼ì„œ 
     pinMode(13, OUTPUT);
-    pinMode(2, INPUT); //½ºÀ§Ä¡
-    pinMode(7, OUTPUT); // µµÆ® ¸ÅÆ®¸¯½º 
-    pinMode(8, OUTPUT); // µµÆ® ¸ÅÆ®¸¯½º 
-    pinMode(9, OUTPUT); // µµÆ® ¸ÅÆ®¸¯½º 
+    pinMode(2, INPUT); //ìŠ¤ìœ„ì¹˜
+    pinMode(7, OUTPUT); // ë„íŠ¸ ë§¤íŠ¸ë¦­ìŠ¤ 
+    pinMode(8, OUTPUT); // ë„íŠ¸ ë§¤íŠ¸ë¦­ìŠ¤ 
+    pinMode(9, OUTPUT); // ë„íŠ¸ ë§¤íŠ¸ë¦­ìŠ¤ 
 
-    // µµÆ® ¸ÅÆ®¸¯½º 
+    // ë„íŠ¸ ë§¤íŠ¸ë¦­ìŠ¤ 
     lc.shutdown(0, false);
     lc.setIntensity(0, 5);
-    lc.clearDisplay(0); // È­¸é ÃÊ±âÈ­
+    lc.clearDisplay(0); // í™”ë©´ ì´ˆê¸°í™”
 
-    //mySerial.begin(9600); //ºí·çÅõ½º ½Ã¸®¾ó
+    //mySerial.begin(9600); //ë¸”ë£¨íˆ¬ìŠ¤ ì‹œë¦¬ì–¼
     Serial.print("click button");
 
 }
 
-void donode(int ndvl, int cndvl = -1) {
+void donode(int ndvl, int cndvl = 'i') {
     node[nodeindex] = cndvl;
     noderoute[nodeindex] = ndvl;
     nodeindex++;
@@ -484,7 +521,7 @@ void loop() {
     {
         start = 1;
 
-        //½Ã¸®¾ó·Î ºñ·ÊÁ¦¾î °ª º¯°æ (ÇÊ¿ä x)
+        //ì‹œë¦¬ì–¼ë¡œ ë¹„ë¡€ì œì–´ ê°’ ë³€ê²½ (í•„ìš” x)
         bool isRecv = SerialRead();
         if (isRecv) {
             if (cmd == "t")
@@ -500,7 +537,7 @@ void loop() {
         double ct = (double)millis() / 1000;
 
         /*
-        //µğ¹ö±ë¿ë
+        //ë””ë²„ê¹…ìš©
         Serial.println(rs);
         Serial.println(ls);
         Serial.println(fs);
@@ -509,15 +546,20 @@ void loop() {
         Serial.println(fs_on);
         */
 
-        //»óÈ² º¯°æ½Ã 
+        //ìƒí™© ë³€ê²½ì‹œ 
         if (STEP != pSTEP)
         {
             if (STEP == 3 && pSTEP == 0) {
+                dv_mode = 1;
+                dv_chkTime = ct;
                 pSTEP = STEP;
             }
             else if (STEP == 0 && pSTEP == 3) {
                 Serial.write('3');
-                donode(3);
+                donode('z');
+
+                dv_mode = 1;
+                dv_chkTime = ct;
                 pSTEP = STEP;
             }
             else {
@@ -528,10 +570,10 @@ void loop() {
 
 
                 char wBuff[64];
-                int wLeng = sprintf(wBuff, "STEP:%d\r\n", STEP); //ÇöÀç »óÈ² Ãâ·Â
+                int wLeng = sprintf(wBuff, "STEP:%d\r\n", STEP); //í˜„ì¬ ìƒí™© ì¶œë ¥
                 //Serial.write(wBuff, wLeng);
 
-                //µğ¹ö±ë¿ë
+                //ë””ë²„ê¹…ìš©
                 //Serial.println(x);
                 //Serial.println(y);
                 //Serial.println(z);
@@ -540,8 +582,8 @@ void loop() {
                 //Serial.println(f_d);
 
 
-                dv_mode = 1; //¼Óµµ Àú°¨¸ğµå on
-                dv_chkTime = ct;//¼Óµµ Àú°¨¸ğµå ½ÃÀÛ ½Ã°£ ÀúÀå 
+                dv_mode = 1; //ì†ë„ ì €ê°ëª¨ë“œ on
+                dv_chkTime = ct;//ì†ë„ ì €ê°ëª¨ë“œ ì‹œì‘ ì‹œê°„ ì €ì¥ 
 
                 pSTEP = STEP;
 
@@ -554,26 +596,26 @@ void loop() {
         ls = analogRead(A1);
         fs = analogRead(A2);
 
-        //////////////// Æ©´× ÇÊ /////////////////
+        //////////////// íŠœë‹ í•„ /////////////////
 
-        //ÁÂ,¿ì,¾Õ ¼¾¼­ ±âÁØ°ª ex)170ÀÌÇÏ °Å¸®¸¦ º®À¸·Î ÀÎ½Ä
+        //ì¢Œ,ìš°,ì• ì„¼ì„œ ê¸°ì¤€ê°’ ex)170ì´í•˜ ê±°ë¦¬ë¥¼ ë²½ìœ¼ë¡œ ì¸ì‹
         bool rs_on = (rs >= 170);
         bool ls_on = (ls >= 170);
         bool fs_on = (fs >= 90);
 
-        //°¨¼Ó¸ğµå ½ÇÇà
+        //ê°ì†ëª¨ë“œ ì‹¤í–‰
         if (dv_mode == 1 && STEP == 0)
         {
             //Serial.print(ct);
             if (ave_velo(ct))
             {
-                dv_mode = 0; //°¨¼Ó¸ğµå Á¾·á 
+                dv_mode = 0; //ê°ì†ëª¨ë“œ ì¢…ë£Œ 
                 //Serial.println(av);
-                //Serial.print("off"); //Á¾·á ¾Ë¸² 
-                av = 250; //Æò±Õ¼Óµµ 250À¸·Î Àç¼³Á¤ (ÇÊ¿ä½Ã Æ©´×)
-                if ((fs <= 450) && (fs >= 300)) //¼¾¼­°ª¿¡ µû¸¥ Æò±Õ ¼Óµµ ¼³Á¤ (ÇÊ¿ä½Ã Æ©´×)
+                //Serial.print("off"); //ì¢…ë£Œ ì•Œë¦¼ 
+                av = 250; //í‰ê· ì†ë„ 250ìœ¼ë¡œ ì¬ì„¤ì • (í•„ìš”ì‹œ íŠœë‹)
+                if ((fs <= 450) && (fs >= 300)) //ì„¼ì„œê°’ì— ë”°ë¥¸ í‰ê·  ì†ë„ ì„¤ì • (í•„ìš”ì‹œ íŠœë‹)
                     av = 200;
-                else if (fs <= 300) //À§¿Í µ¿ÀÏ 
+                else if (fs <= 300) //ìœ„ì™€ ë™ì¼ 
                     av = 150;
             }
 
@@ -581,41 +623,41 @@ void loop() {
 
         ////////////////////////////////////////
 
-        //»óÈ²º° ÆÇ´Ü 
+        //ìƒí™©ë³„ íŒë‹¨ 
         if (STEP == 0 || STEP == 3)
         {
 
             chkTime = ct;
 
-            if (!rs_on && !ls_on && !fs_on) //º® + º® + º®
+            if (!rs_on && !ls_on && !fs_on) //ë²½ + ë²½ + ë²½
             {
 
-                STEP = 1; //À¯ÅÏ
+                STEP = 1; //ìœ í„´
             }
 
-            else if (!rs_on && !ls_on && fs_on) //º®+ º® + ¿­ //ºĞ±âÁ¡ Ã¼Å©
+            else if (!rs_on && !ls_on && fs_on) //ë²½+ ë²½ + ì—´ //ë¶„ê¸°ì  ì²´í¬
             {
                 STEP = 0;
                 DISPLAY_(0);
-                Linear(ct, ls, av); //ÀüÁø
+                Linear(ct, ls, av); //ì „ì§„
             }
 
-            else if (!rs_on && ls_on && (fs <= 150)) //º®+¿­+º®
+            else if (!rs_on && ls_on && (fs <= 150)) //ë²½+ì—´+ë²½
             {
 
-                STEP = 2; //¿ŞÂÊ ÅÏ 
+                STEP = 2; //ì™¼ìª½ í„´ 
             }
 
-            else if (!rs_on && ls_on && fs_on) //º®+¿­+¿­
+            else if (!rs_on && ls_on && fs_on) //ë²½+ì—´+ì—´
             {
 
-                //ÀüÁø
+                //ì „ì§„
                 STEP = 3;
                 DISPLAY_(0);
-                Linear(ct, b - rs - a, av); //ÁÂ ¼¾¼­ °ªÀº ÃøÁ¤ °ªÀÌ ¾Æ´Ñ °è»ê°ªÀ¸·Î ´ëÃ¼ 
+                Linear(ct, b - rs - a, av); //ì¢Œ ì„¼ì„œ ê°’ì€ ì¸¡ì • ê°’ì´ ì•„ë‹Œ ê³„ì‚°ê°’ìœ¼ë¡œ ëŒ€ì²´ 
 
             }
-            else //±× ¿ÜÀÇ °æ¿ì´Â ¸ğµÎ ¿ìÈ¸Àü 
+            else //ê·¸ ì™¸ì˜ ê²½ìš°ëŠ” ëª¨ë‘ ìš°íšŒì „ 
             {
                 x = rs_on;
                 y = ls_on;
@@ -625,46 +667,43 @@ void loop() {
                 f_d = fs;
 
 
-                STEP = 4; //¿À¸¥ÂÊ ÅÏ 
+                STEP = 4; //ì˜¤ë¥¸ìª½ í„´ 
             }
 
 
         }
 
-        else
+        else if (STEP == 1)//ìœ í„´
         {
-            donode(STEP);
-            if (STEP == 1)//À¯ÅÏ
-            {
-                DISPLAY_(1);
-                if (U_turn(ct)) {
-                    Serial.write('1');
-                    nodeindex--;
-                    donode(noderoute[nodeindex]);
-                    m_step = STEP = 0;
+            DISPLAY_(1);
+            if (U_turn(ct)) {
+                Serial.write('1');
+                donode(noderoute[nodeindex]);
+                m_step = STEP = 0;
 
-                }
             }
-            else if (STEP == 2)//ÁÂÈ¸Àü
-            {
-                DISPLAY_(2);
+        }
+        else if (STEP == 2)//ì¢ŒíšŒì „
+        {
+            DISPLAY_(2);
 
-                if (RL_Turn(ct, -1)) {
-                    Serial.write('2');
-                    m_step = STEP = 0;
+            if (RL_Turn(ct, -1)) {
+                Serial.write('2');
+                donode('l');
+                m_step = STEP = 0;
 
-                }
             }
-            //else if (STEP == 3) {
-            //}
-            else if (STEP == 4)//¿ìÈ¸Àü
-            {
-                DISPLAY_(4);
-                if (RL_Turn(ct, 1)) {
-                    Serial.write('4');
-                    m_step = STEP = 0;
+        }
+        //else if (STEP == 3) {
+        //}
+        else if (STEP == 4)//ìš°íšŒì „
+        {
+            DISPLAY_(4);
+            if (RL_Turn(ct, 1)) {
+                Serial.write('4');
+                donode('r');
+                m_step = STEP = 0;
 
-                }
             }
         }
 
@@ -676,10 +715,10 @@ void loop() {
         analogWrite(11, abs(lw));
 
         //if (mySerial.available()) {
-        //  Serial.write(Serial.read());  //ºí·çÅõ½ºÃø ³»¿ëÀ» ½Ã¸®¾ó¸ğ´ÏÅÍ¿¡ Ãâ·Â
+        //  Serial.write(Serial.read());  //ë¸”ë£¨íˆ¬ìŠ¤ì¸¡ ë‚´ìš©ì„ ì‹œë¦¬ì–¼ëª¨ë‹ˆí„°ì— ì¶œë ¥
         //}
         //if (Serial.available()) {
-        //  mySerial.write(Serial.read());  //½Ã¸®¾ó ¸ğ´ÏÅÍ ³»¿ëÀ» ºí·çÃß½º Ãø¿¡ WRITE
+        //  mySerial.write(Serial.read());  //ì‹œë¦¬ì–¼ ëª¨ë‹ˆí„° ë‚´ìš©ì„ ë¸”ë£¨ì¶”ìŠ¤ ì¸¡ì— WRITE
         //}
     }
 
