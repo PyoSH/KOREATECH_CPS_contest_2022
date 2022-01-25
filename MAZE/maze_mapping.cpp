@@ -23,10 +23,10 @@ int pre_button = 0;
 int start = 0;
 
 bool nodechek = false;
-char node[30];
+//char node[30];
 char noderoute[30];
 int nodeindex = 0;
-int readnode = 0;
+int readindex = 0;
 
 double target = 85;
 double kp1 = 2, kp2 = 4;
@@ -497,7 +497,6 @@ void setup() {
     pinMode(7, OUTPUT); // 도트 매트릭스 
     pinMode(8, OUTPUT); // 도트 매트릭스 
     pinMode(9, OUTPUT); // 도트 매트릭스 
-    pinMode(6, INPUT);
 
     // 도트 매트릭스 
     lc.shutdown(0, false);
@@ -510,7 +509,7 @@ void setup() {
 }
 
 void donode(int ndvl, int cndvl = 'i') {
-    node[nodeindex] = cndvl;
+    EEPROM.write(nodeindex, cndvl);
     noderoute[nodeindex] = ndvl;
     nodeindex++;
 }
@@ -518,17 +517,9 @@ void donode(int ndvl, int cndvl = 'i') {
 
 void loop() {
     //  lc.clearDisplay(0);
+
     int button = digitalRead(2);
-    if (start == 1 && digitalRead(6)) {
-        start = 0;
-        for (int i = 0; i < 30; i++) {
-            if (node[i] != NULL) EEPROM.write(i, node[i]);
-            else EEPROM.write(i, NULL); break;
-        }
-    }
-
-
-    else if (button == 1 && pre_button == 0 || start == 1)
+    if (button == 1 && pre_button == 0 || start == 1)
     {
         start = 1;
 
@@ -567,7 +558,7 @@ void loop() {
             }
             else if (STEP == 0 && pSTEP == 3) {
                 Serial.write('3');
-                donode('z');
+                donode('f');
 
                 dv_mode = 1;
                 dv_chkTime = ct;
@@ -607,8 +598,6 @@ void loop() {
         ls = analogRead(A1);
         fs = analogRead(A2);
 
-
-
         //////////////// 튜닝 필 /////////////////
 
         //좌,우,앞 센서 기준값 ex)170이하 거리를 벽으로 인식
@@ -617,12 +606,11 @@ void loop() {
         bool fs_on = (fs >= 90);
 
         if (!(!rs_on && !ls_on && fs_on)) {
-            if (EEPROM.read(readnode) == 'z')fs_on = false;
-            else if (EEPROM.read(readnode) == 'r')rs_on = false;
-            else if (EEPROM.read(readnode) == 'l')ls_on = false;
-            readnode++;
+            if (EEPROM.read(readindex) == 108) ls_on = false;
+            else if (EEPROM.read(readindex) == 114) rs_on = false;
+            else if (EEPROM.read(readindex) == 102) fs_on = false;
+            readindex++;
         }
-
 
         //감속모드 실행
         if (dv_mode == 1 && STEP == 0)
@@ -699,6 +687,7 @@ void loop() {
             DISPLAY_(1);
             if (U_turn(ct)) {
                 Serial.write('1');
+                nodeindex--;
                 donode(noderoute[nodeindex]);
                 m_step = STEP = 0;
 
@@ -745,6 +734,8 @@ void loop() {
 
     else {
         DISPLAY_(9);
+        nodeindex = 0;
+        readindex = 0;
     }
 
 }
