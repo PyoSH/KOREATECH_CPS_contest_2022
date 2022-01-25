@@ -1,6 +1,7 @@
 //#include "VArduino.h"
 #include <math.h>
 #include "LedControl.h"
+
 #define TERMINATE '\r'
 String cmd, data, buff;
 
@@ -22,6 +23,10 @@ int count = 0;
 int button = digitalRead(2);
 int pre_button = 0;
 int start = 0;
+
+//int blueTx = 1;   //Tx (보내는핀 설정)at
+//int blueRx = 0;   //Rx (받는핀 설정)
+//SoftwareSerial mySerial(blueTx, blueRx);  //시리얼 통신을 위한 객체선언
 
 
 //////////////////튜닝 필수//////////////////////
@@ -78,8 +83,8 @@ bool U_turn(double ct)
 		//rw,lw 속도값 (속도 튜닝 필)
 		rw = -180;
 		lw = 180;
-		if ((ct - chkTime) >= 1.46) // 0.6은 회전시간 (시간 튜닝 필) 
-			// (0) 0.6 (1) 0.8 (2) 1.5-230 (3) 1.0 (4) 1.3 (5) 1.47 (6) 1.46
+		if ((ct - chkTime) >= 1.36) // 0.6은 회전시간 (시간 튜닝 필) 
+			// (0) 0.6 (1) 0.8 (2) 1.5-230 (6) 1.46(배터리 절반정도-250) (7) 1.4
 		{
 			m_step++;
 			chkTime = ct;
@@ -95,8 +100,6 @@ bool U_turn(double ct)
 	case 1://벽 추종 직진함수와 동일(속도 튜닝 필)
 		if ((ct - prevTime) >= 0.1) {
 			prevTime = ct;
-
-
 
 			int ds = (rs - prs);
 			dir = ds > 0 ? 1 : ds < 0 ? -1 : dir;
@@ -138,7 +141,7 @@ bool RL_Turn(double ct, int turn)
 		if (turn == 1) //우회전시 
 		{
 			rw = lw = 250; //튜닝 필
-			if (((ct - chkTime) >= 1.4) || (fs <= 30)) //튜닝 필 (0) 0.2 (1) 0.3 (2) 0.6 (3) 0.9 (4) 1.4
+			if (((ct - chkTime) >= 1.2) || (fs <= 30)) //튜닝 필 (0) 0.2 (1) 0.3 (2) 0.6 (3) 0.9 (4) 1.4(배터리 절반-250) (5) 1.2
 			{
 
 				m_step++;
@@ -150,7 +153,7 @@ bool RL_Turn(double ct, int turn)
 		{
 			rw = lw = 250; //튜닝 필 (0) 150 (1) 220
 
-			if ((ct - chkTime) >= 0.5 || (fs <= 30)) //튜닝 필 (0) 0.1 (1) 0.3 (2) 0.6 (3) 0.7 (4) 0.5
+			if ((ct - chkTime) >= 0.4 || (fs <= 30)) //튜닝 필 (0) 0.1 (1) 0.3 (2) 0.6 (3) 0.7 (4) 0.5(배터리절반-250) (5) 0.4
 			{
 				/*if (fs <= 30) {
 					analogWrite(7, 100);
@@ -171,7 +174,7 @@ bool RL_Turn(double ct, int turn)
 		{
 			rw = -220 * turn; //좌우 튜닝필
 			lw = 220 * turn;
-			if ((ct - chkTime) >= 0.85) //시간 튜닝 필 (0) 0.65
+			if ((ct - chkTime) >= 0.8) //시간 튜닝 필 (0) 0.65 (1) 0.85(배터리절반-250)
 			{
 				m_step++;
 				chkTime = ct;
@@ -189,7 +192,7 @@ bool RL_Turn(double ct, int turn)
 		{
 			rw = -248 * turn; //튜닝 (1) -228
 			lw = 248 * turn;
-			if ((ct - chkTime) >= 0.85) //튜닝 (0)0.55 (1) 
+			if ((ct - chkTime) >= 0.8) //튜닝 (0)0.55 (1) 0.85(배터리절반-250)
 			{
 				m_step++;
 				chkTime = ct;
@@ -289,7 +292,7 @@ byte TURN_arry[] = {
 	B01110001,
 	B00100000
 };
-
+////////////////////////////////////////
 void display_LEFT(int a) {
 	if (a == 0) {
 		for (int i = 0; i < 8; i++) {
@@ -341,6 +344,7 @@ void display_TURN(int a) {
 		}
 	}
 }
+
 //////////////노필요 구간/////////////
 
 //리미트 함수
@@ -368,6 +372,18 @@ bool SerialRead()
 	}
 	return false;
 }
+//그냥 직진 함수 ( 사용안함)
+bool Forward(double ct)
+{
+	rw = lw = 150;
+	if ((ct - chkTime) >= 0.1)
+	{
+		return true;
+	}
+	return false;
+}
+
+///////////////////////////////////////
 
 
 void setup() {
@@ -375,14 +391,16 @@ void setup() {
 	pinMode(12, OUTPUT); //좌우센서 
 	pinMode(13, OUTPUT);
 	pinMode(2, INPUT); //스위치
-	//pinMode(7, OUTPUT); // 도트 매트릭스 
-	//pinMode(8, OUTPUT); // 도트 매트릭스 
-	//pinMode(9, OUTPUT); // 도트 매트릭스 
+	pinMode(7, OUTPUT); // 도트 매트릭스 
+	pinMode(8, OUTPUT); // 도트 매트릭스 
+	pinMode(9, OUTPUT); // 도트 매트릭스 
 
+	// 도트 매트릭스 
 	lc.shutdown(0, false);
 	lc.setIntensity(0, 5);
 	lc.clearDisplay(0);
 
+	//mySerial.begin(9600); //블루투스 시리얼
 	Serial.print("click button");
 
 }
@@ -423,6 +441,11 @@ void loop() {
 		//상황 변경시 
 		if (STEP != pSTEP)
 		{
+			display_FRONT(0);
+			display_LEFT(0);
+			display_RIGHT(0);
+			display_TURN(0);
+
 
 			char wBuff[64];
 			int wLeng = sprintf(wBuff, "STEP:%d\r\n", STEP); //현재 상황 출력
@@ -440,10 +463,36 @@ void loop() {
 			dv_mode = 1; //속도 저감모드 on
 			dv_chkTime = ct;//속도 저감모드 시작 시간 저장 
 
+			switch (STEP)
+			{
+			case 0:{
+				Serial.println("FRONT");
+				display_FRONT(1);
+				break;
+			}
+			case 1:{
+				Serial.println("TURN");
+				display_TURN(1);
+				break;
+			}
+			case 2:{
+				Serial.println("LEFT");
+				display_LEFT(1);
+				break;
+			}
+			case 4:{
+				Serial.println("RIGHT");
+				display_RIGHT(1);
+				break;
+			}
+			default:
+				break;
+			}
+
+
 			pSTEP = STEP;
 
-
-
+			//Serial.write(STEP);
 		}
 
 
@@ -485,15 +534,16 @@ void loop() {
 
 			if (!rs_on && !ls_on && !fs_on) //벽 + 벽 + 벽
 			{
-
+				//display_TURN(1);
 				STEP = 1; //유턴
+				//display_TURN(0);
 			}
 
 			else if (!rs_on && !ls_on && fs_on) //벽+ 벽 + 열 
 			{
-				display_FRONT(1);
+				//display_FRONT(1);
 				Linear(ct, ls, av); //전진
-				display_FRONT(0);
+				//display_FRONT(0);
 			}
 
 			else if (!rs_on && ls_on && (fs <= 150)) //벽+열+벽
@@ -504,10 +554,10 @@ void loop() {
 
 			else if (!rs_on && ls_on && fs_on) //벽+열+열
 			{
-				display_FRONT(1);
+				//display_FRONT(1);
 				//전진
 				Linear(ct, b - rs - a, av); //좌 센서 값은 측정 값이 아닌 계산값으로 대체 
-				display_FRONT(0);
+				//display_FRONT(0);
 			}
 			else //그 외의 경우는 모두 우회전 
 			{
@@ -527,34 +577,42 @@ void loop() {
 
 		else if (STEP == 1)//유턴
 		{
-			display_TURN(1);
+			//display_TURN(1);
 			if (U_turn(ct)) {
 				m_step = STEP = 0;
-				display_TURN(0);
+			//	display_TURN(0);
 			}
 		}
 		else if (STEP == 2)//좌회전
 		{
-			display_LEFT(1);
+			//display_LEFT(1);
 			if (RL_Turn(ct, -1)) {
 				m_step = STEP = 0;
-				display_LEFT(0);
+			//	display_LEFT(0);
 			}
 		}
 		else if (STEP == 4)//우회전
 		{
-			display_RIGHT(1);
+			//display_RIGHT(1);
 			if (RL_Turn(ct, 1)) {
 				m_step = STEP = 0;
-				display_RIGHT(0);
+			//	display_RIGHT(0);
 			}
 		}
+
 
 
 		digitalWrite(12, rw < 0);
 		digitalWrite(13, lw < 0);
 		analogWrite(10, abs(rw));
 		analogWrite(11, abs(lw));
+
+		//if (mySerial.available()) {
+		//	Serial.write(Serial.read());  //블루투스측 내용을 시리얼모니터에 출력
+		//}
+		//if (Serial.available()) {
+		//	mySerial.write(Serial.read());  //시리얼 모니터 내용을 블루추스 측에 WRITE
+		//}
 	}
 
 
