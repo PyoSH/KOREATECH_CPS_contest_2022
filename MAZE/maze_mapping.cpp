@@ -509,7 +509,7 @@ void setup() {
 }
 
 void donode(int ndvl, int cndvl = 'i') {
-    EEPROM.write(nodeindex, cndvl);
+    if (EEPROM.read(nodeindex) == 105 || EEPROM.read(nodeindex) == 255) EEPROM.write(nodeindex, cndvl);
     noderoute[nodeindex] = ndvl;
     nodeindex++;
 }
